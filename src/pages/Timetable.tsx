@@ -1,4 +1,5 @@
 import ModulePage from '@/components/common/ModulePage';
+import RoleSection from '@/components/common/RoleSection';
 import { Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,47 +31,70 @@ const TimetablePage = () => {
     periods: entries.filter(e => e.day_of_week === day).sort((a, b) => a.period - b.period),
   }));
 
+  const TimetableGrid = () => (
+    <>
+      {loading ? <p className="text-sm text-muted-foreground">Loading...</p> : entries.length === 0 ? <p className="text-sm text-muted-foreground">No timetable entries found.</p> : (
+        <div className="space-y-4">
+          {grouped.filter(g => g.periods.length > 0).map(g => (
+            <div key={g.day}>
+              <h3 className="font-semibold text-sm mb-2">{g.day}</h3>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader><TableRow><TableHead>Period</TableHead><TableHead>Time</TableHead><TableHead>Subject</TableHead><TableHead>Class</TableHead><TableHead>Room</TableHead></TableRow></TableHeader>
+                  <TableBody>
+                    {g.periods.map(p => (
+                      <TableRow key={p.id}>
+                        <TableCell>{p.period}</TableCell>
+                        <TableCell className="font-mono text-xs">{p.start_time || '—'} - {p.end_time || '—'}</TableCell>
+                        <TableCell className="font-medium">{p.subjects?.name || '—'}</TableCell>
+                        <TableCell>{p.classes ? `${p.classes.name} ${p.classes.section}` : '—'}</TableCell>
+                        <TableCell>{p.room || '—'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+
   return (
     <ModulePage title="Timetable" description="Class and teacher schedules" icon={Clock}>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base">Weekly Timetable</CardTitle>
-          <Select value={selectedClass} onValueChange={setSelectedClass}>
-            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Filter by class" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Classes</SelectItem>
-              {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name} {c.section}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </CardHeader>
-        <CardContent>
-          {loading ? <p className="text-sm text-muted-foreground">Loading...</p> : entries.length === 0 ? <p className="text-sm text-muted-foreground">No timetable entries found.</p> : (
-            <div className="space-y-4">
-              {grouped.filter(g => g.periods.length > 0).map(g => (
-                <div key={g.day}>
-                  <h3 className="font-semibold text-sm mb-2">{g.day}</h3>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader><TableRow><TableHead>Period</TableHead><TableHead>Time</TableHead><TableHead>Subject</TableHead><TableHead>Class</TableHead><TableHead>Room</TableHead></TableRow></TableHeader>
-                      <TableBody>
-                        {g.periods.map(p => (
-                          <TableRow key={p.id}>
-                            <TableCell>{p.period}</TableCell>
-                            <TableCell className="font-mono text-xs">{p.start_time || '—'} - {p.end_time || '—'}</TableCell>
-                            <TableCell className="font-medium">{p.subjects?.name || '—'}</TableCell>
-                            <TableCell>{p.classes ? `${p.classes.name} ${p.classes.section}` : '—'}</TableCell>
-                            <TableCell>{p.room || '—'}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Admin: Class filter + full grid */}
+      <RoleSection roles={['admin']}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base">Weekly Timetable</CardTitle>
+            <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Filter by class" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classes</SelectItem>
+                {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name} {c.section}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </CardHeader>
+          <CardContent><TimetableGrid /></CardContent>
+        </Card>
+      </RoleSection>
+
+      {/* Teacher: Their schedule */}
+      <RoleSection roles={['teacher']}>
+        <Card>
+          <CardHeader><CardTitle className="text-base">My Teaching Schedule</CardTitle></CardHeader>
+          <CardContent><TimetableGrid /></CardContent>
+        </Card>
+      </RoleSection>
+
+      {/* Student & Parent: Class timetable */}
+      <RoleSection roles={['student', 'parent']}>
+        <Card>
+          <CardHeader><CardTitle className="text-base">My Class Timetable</CardTitle></CardHeader>
+          <CardContent><TimetableGrid /></CardContent>
+        </Card>
+      </RoleSection>
     </ModulePage>
   );
 };
