@@ -1,5 +1,6 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
+import AddDialog from '@/components/common/AddDialog';
 import { Bus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,26 +8,70 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 const TransportPage = () => {
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [routes, setRoutes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchData = () => {
+    setLoading(true);
     Promise.all([
       supabase.from('transport_vehicles').select('*').order('vehicle_number'),
       supabase.from('transport_routes').select('*, transport_vehicles(vehicle_number)').order('route_name'),
-    ]).then(([v, r]) => {
-      setVehicles(v.data || []);
-      setRoutes(r.data || []);
-      setLoading(false);
-    });
-  }, []);
+    ]).then(([v, r]) => { setVehicles(v.data || []); setRoutes(r.data || []); setLoading(false); });
+  };
+  useEffect(() => { fetchData(); }, []);
+
+  const AddVehicleForm = ({ onClose }: { onClose: () => void }) => {
+    const [form, setForm] = useState({ vehicle_number: '', driver_name: '', driver_phone: '', capacity: '40' });
+    const [saving, setSaving] = useState(false);
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault(); setSaving(true);
+      const { error } = await supabase.from('transport_vehicles').insert({ vehicle_number: form.vehicle_number, driver_name: form.driver_name || null, driver_phone: form.driver_phone || null, capacity: Number(form.capacity) });
+      if (error) toast.error(error.message); else { toast.success('Vehicle added'); onClose(); fetchData(); }
+      setSaving(false);
+    };
+    return (
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1"><Label>Vehicle Number *</Label><Input required value={form.vehicle_number} onChange={e => setForm(f => ({ ...f, vehicle_number: e.target.value }))} /></div>
+          <div className="space-y-1"><Label>Driver Name</Label><Input value={form.driver_name} onChange={e => setForm(f => ({ ...f, driver_name: e.target.value }))} /></div>
+          <div className="space-y-1"><Label>Driver Phone</Label><Input value={form.driver_phone} onChange={e => setForm(f => ({ ...f, driver_phone: e.target.value }))} /></div>
+          <div className="space-y-1"><Label>Capacity</Label><Input type="number" value={form.capacity} onChange={e => setForm(f => ({ ...f, capacity: e.target.value }))} /></div>
+        </div>
+        <Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Add Vehicle'}</Button>
+      </form>
+    );
+  };
+
+  const AddRouteForm = ({ onClose }: { onClose: () => void }) => {
+    const [form, setForm] = useState({ route_name: '', vehicle_id: '', stops: '' });
+    const [saving, setSaving] = useState(false);
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault(); setSaving(true);
+      const stopsArr = form.stops ? form.stops.split(',').map(s => s.trim()).filter(Boolean) : null;
+      const { error } = await supabase.from('transport_routes').insert({ route_name: form.route_name, vehicle_id: form.vehicle_id || null, stops: stopsArr });
+      if (error) toast.error(error.message); else { toast.success('Route added'); onClose(); fetchData(); }
+      setSaving(false);
+    };
+    return (
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="space-y-1"><Label>Route Name *</Label><Input required value={form.route_name} onChange={e => setForm(f => ({ ...f, route_name: e.target.value }))} /></div>
+        <div className="space-y-1"><Label>Vehicle</Label><Select value={form.vehicle_id} onValueChange={v => setForm(f => ({ ...f, vehicle_id: v }))}><SelectTrigger><SelectValue placeholder="Select vehicle" /></SelectTrigger><SelectContent>{vehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.vehicle_number}</SelectItem>)}</SelectContent></Select></div>
+        <div className="space-y-1"><Label>Stops (comma-separated)</Label><Input value={form.stops} onChange={e => setForm(f => ({ ...f, stops: e.target.value }))} placeholder="Stop 1, Stop 2, Stop 3" /></div>
+        <Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Add Route'}</Button>
+      </form>
+    );
+  };
 
   return (
     <ModulePage title="Transport" description="Vehicles, routes, and student assignments" icon={Bus}>
-      {/* Admin: Full management */}
       <RoleSection roles={['admin']}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Vehicles</p><p className="text-2xl font-bold">{vehicles.length}</p></CardContent></Card>
@@ -36,14 +81,14 @@ const TransportPage = () => {
         <Tabs defaultValue="vehicles">
           <TabsList><TabsTrigger value="vehicles">Vehicles</TabsTrigger><TabsTrigger value="routes">Routes</TabsTrigger></TabsList>
           <TabsContent value="vehicles">
-            <Card><CardHeader><CardTitle className="text-base">Vehicles</CardTitle></CardHeader>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Vehicles</CardTitle><AddDialog title="Add Vehicle" triggerLabel="Add Vehicle">{({ onClose }) => <AddVehicleForm onClose={onClose} />}</AddDialog></CardHeader>
             <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : vehicles.length === 0 ? <p className="text-sm text-muted-foreground">No vehicles found.</p> : (
               <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Vehicle No</TableHead><TableHead>Driver</TableHead><TableHead>Phone</TableHead><TableHead>Capacity</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
               <TableBody>{vehicles.map(v => <TableRow key={v.id}><TableCell className="font-mono font-medium">{v.vehicle_number}</TableCell><TableCell>{v.driver_name || '—'}</TableCell><TableCell>{v.driver_phone || '—'}</TableCell><TableCell>{v.capacity}</TableCell><TableCell><Badge variant="outline" className="capitalize">{v.status}</Badge></TableCell></TableRow>)}</TableBody></Table></div>
             )}</CardContent></Card>
           </TabsContent>
           <TabsContent value="routes">
-            <Card><CardHeader><CardTitle className="text-base">Routes</CardTitle></CardHeader>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Routes</CardTitle><AddDialog title="Add Route" triggerLabel="Add Route">{({ onClose }) => <AddRouteForm onClose={onClose} />}</AddDialog></CardHeader>
             <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : routes.length === 0 ? <p className="text-sm text-muted-foreground">No routes found.</p> : (
               <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Route Name</TableHead><TableHead>Vehicle</TableHead><TableHead>Stops</TableHead></TableRow></TableHeader>
               <TableBody>{routes.map(r => <TableRow key={r.id}><TableCell className="font-medium">{r.route_name}</TableCell><TableCell className="font-mono">{r.transport_vehicles?.vehicle_number || '—'}</TableCell><TableCell className="text-sm">{Array.isArray(r.stops) ? r.stops.join(', ') : '—'}</TableCell></TableRow>)}</TableBody></Table></div>
@@ -51,20 +96,8 @@ const TransportPage = () => {
           </TabsContent>
         </Tabs>
       </RoleSection>
-
-      {/* Parent: Route info only */}
       <RoleSection roles={['parent']}>
-        <Card>
-          <CardHeader><CardTitle className="text-base">Transport Routes</CardTitle></CardHeader>
-          <CardContent>{routes.length === 0 ? <p className="text-sm text-muted-foreground">No route information available.</p> : (
-            <div className="space-y-3">{routes.map(r => (
-              <div key={r.id} className="border rounded-lg p-3">
-                <div className="flex justify-between items-center mb-1"><p className="font-medium">{r.route_name}</p><Badge variant="secondary">{r.transport_vehicles?.vehicle_number || '—'}</Badge></div>
-                <p className="text-xs text-muted-foreground">Stops: {Array.isArray(r.stops) ? r.stops.join(' → ') : '—'}</p>
-              </div>
-            ))}</div>
-          )}</CardContent>
-        </Card>
+        <Card><CardHeader><CardTitle className="text-base">Transport Routes</CardTitle></CardHeader><CardContent>{routes.length === 0 ? <p className="text-sm text-muted-foreground">No route information available.</p> : (<div className="space-y-3">{routes.map(r => (<div key={r.id} className="border rounded-lg p-3"><div className="flex justify-between items-center mb-1"><p className="font-medium">{r.route_name}</p><Badge variant="secondary">{r.transport_vehicles?.vehicle_number || '—'}</Badge></div><p className="text-xs text-muted-foreground">Stops: {Array.isArray(r.stops) ? r.stops.join(' → ') : '—'}</p></div>))}</div>)}</CardContent></Card>
       </RoleSection>
     </ModulePage>
   );
