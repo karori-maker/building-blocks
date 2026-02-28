@@ -21,6 +21,7 @@ import InventoryPage from "@/pages/Inventory";
 import DisciplinePage from "@/pages/Discipline";
 import CommunicationPage from "@/pages/Communication";
 import EventsPage from "@/pages/Events";
+import MaterialsPage from "@/pages/Materials";
 import SettingsPage from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 
@@ -57,6 +58,7 @@ const App = () => (
               <Route path="/discipline" element={<DisciplinePage />} />
               <Route path="/communication" element={<CommunicationPage />} />
               <Route path="/events" element={<EventsPage />} />
+              <Route path="/materials" element={<MaterialsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
