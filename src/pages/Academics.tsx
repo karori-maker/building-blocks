@@ -1,6 +1,8 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import ExportButton from '@/components/common/ExportButton';
+import ReportCard, { getGrade } from '@/components/common/ReportCard';
 import { BookOpen } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 
 const AcademicsPage = () => {
   const [exams, setExams] = useState<any[]>([]);
@@ -20,22 +23,99 @@ const AcademicsPage = () => {
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
+  const [settings, setSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+
+  // Report tab state
+  const [reportStudent, setReportStudent] = useState<string>('');
+  const [reportTerm, setReportTerm] = useState<string>('Term 1');
 
   const fetchData = () => {
     setLoading(true);
     Promise.all([
       supabase.from('exams').select('*, classes(name, section), subjects(name)').order('date', { ascending: false }),
-      supabase.from('grades').select('*, students(full_name), subjects(name), exams(name)').order('created_at', { ascending: false }).limit(100),
+      supabase.from('grades').select('*, students(full_name, student_id, class_id), subjects(name), exams(name, exam_type, max_marks)').order('created_at', { ascending: false }).limit(1000),
       supabase.from('subjects').select('*, classes(name, section)').order('name'),
       supabase.from('classes').select('*').order('name'),
-      supabase.from('students').select('id, full_name').order('full_name'),
-    ]).then(([e, g, s, c, st]) => {
+      supabase.from('students').select('id, full_name, student_id, class_id').order('full_name'),
+      supabase.from('school_settings').select('*').limit(1).single(),
+    ]).then(([e, g, s, c, st, ss]) => {
       setExams(e.data || []); setGrades(g.data || []); setSubjects(s.data || []); setClasses(c.data || []); setStudents(st.data || []);
+      setSettings(ss.data);
       setLoading(false);
     });
   };
   useEffect(() => { fetchData(); }, []);
+
+  // Build report card data for selected student
+  const buildReport = () => {
+    const student = students.find(s => s.id === reportStudent);
+    if (!student) return null;
+
+    const studentGrades = grades.filter(g => g.student_id === student.id);
+    const className = classes.find(c => c.id === student.class_id);
+
+    // Group grades by subject
+    const subjectMap = new Map<string, any[]>();
+    studentGrades.forEach(g => {
+      const subName = g.subjects?.name || 'Unknown';
+      if (!subjectMap.has(subName)) subjectMap.set(subName, []);
+      subjectMap.get(subName)!.push(g);
+    });
+
+    const gradeRows = Array.from(subjectMap.entries()).map(([subject, sGrades]) => {
+      // Split into midterm and exam (final)
+      const midterms = sGrades.filter(g => g.exams?.exam_type === 'midterm' || g.exams?.exam_type === 'quiz' || g.exams?.exam_type === 'test');
+      const finals = sGrades.filter(g => g.exams?.exam_type === 'final');
+
+      const mtMarks = midterms.reduce((s, g) => s + (Number(g.marks_obtained) || 0), 0);
+      const mtMax = midterms.reduce((s, g) => s + (Number(g.exams?.max_marks) || 70), 0) || 70;
+      const exMarks = finals.reduce((s, g) => s + (Number(g.marks_obtained) || 0), 0);
+      const exMax = finals.reduce((s, g) => s + (Number(g.exams?.max_marks) || 70), 0) || 70;
+      const total = mtMarks + exMarks;
+      const totalMax = mtMax + exMax;
+      const pct = totalMax > 0 ? (total / totalMax) * 100 : 0;
+
+      return {
+        subject,
+        mt_marks: Number(mtMarks.toFixed(1)),
+        mt_max: mtMax,
+        ex_marks: Number(exMarks.toFixed(1)),
+        ex_max: exMax,
+        total: Number(total.toFixed(1)),
+        total_max: totalMax,
+        grade: getGrade(pct),
+      };
+    });
+
+    const totalMarks = gradeRows.reduce((s, g) => s + g.total, 0);
+    const totalMax = gradeRows.reduce((s, g) => s + g.total_max, 0);
+    const percentage = totalMax > 0 ? (totalMarks / totalMax) * 100 : 0;
+
+    // Calculate position among classmates
+    const classmateIds = students.filter(s => s.class_id === student.class_id).map(s => s.id);
+    const classmatePercentages = classmateIds.map(id => {
+      const cGrades = grades.filter(g => g.student_id === id);
+      const totalM = cGrades.reduce((s, g) => s + (Number(g.marks_obtained) || 0), 0);
+      const totalMx = cGrades.length * 70 || 1; // approximate
+      return { id, pct: (totalM / totalMx) * 100 };
+    }).sort((a, b) => b.pct - a.pct);
+
+    const pos = classmatePercentages.findIndex(c => c.id === student.id) + 1;
+    const position = `${pos}/${classmatePercentages.length}`;
+
+    return {
+      schoolName: settings?.school_name || 'GS MARIE MERCI KIBEHO',
+      studentName: student.full_name,
+      regNumber: student.student_id,
+      className: className ? `${className.name} ${className.section}` : '',
+      academicYear: settings?.academic_year || '2025-2026',
+      term: reportTerm,
+      grades: gradeRows,
+      percentage,
+      position,
+    };
+  };
 
   const AddExamForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ name: '', exam_type: 'midterm', subject_id: '', class_id: '', date: '', max_marks: '100' });
@@ -106,6 +186,8 @@ const AcademicsPage = () => {
     );
   };
 
+  const reportData = reportStudent ? buildReport() : null;
+
   return (
     <ModulePage title="Academics" description="Grades, exams, and academic records" icon={BookOpen}>
       <RoleSection roles={['admin']}>
@@ -117,10 +199,21 @@ const AcademicsPage = () => {
       </RoleSection>
       <RoleSection roles={['admin', 'teacher']}>
         <Tabs defaultValue="exams">
-          <TabsList><TabsTrigger value="exams">Exams</TabsTrigger><TabsTrigger value="grades">Grades</TabsTrigger><TabsTrigger value="subjects">Subjects</TabsTrigger></TabsList>
+          <TabsList>
+            <TabsTrigger value="exams">Exams</TabsTrigger>
+            <TabsTrigger value="grades">Grades</TabsTrigger>
+            <TabsTrigger value="subjects">Subjects</TabsTrigger>
+            <TabsTrigger value="report">Report Card</TabsTrigger>
+          </TabsList>
           <TabsContent value="exams">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Exam Schedule</CardTitle><RoleSection roles={['admin']}><AddDialog title="Add Exam" triggerLabel="Add Exam">{({ onClose }) => <AddExamForm onClose={onClose} />}</AddDialog></RoleSection></CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-base">Exam Schedule</CardTitle>
+                <div className="flex gap-2">
+                  <ExportButton onClick={() => exportToCSV(exams.map(e => ({ name: e.name, type: e.exam_type, subject: e.subjects?.name || '', class: e.classes ? `${e.classes.name} ${e.classes.section}` : '', date: e.date || '', max_marks: e.max_marks })), 'exams')} />
+                  <RoleSection roles={['admin']}><AddDialog title="Add Exam" triggerLabel="Add Exam">{({ onClose }) => <AddExamForm onClose={onClose} />}</AddDialog></RoleSection>
+                </div>
+              </CardHeader>
               <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : exams.length === 0 ? <p className="text-sm text-muted-foreground">No exams found.</p> : (
                 <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Subject</TableHead><TableHead>Class</TableHead><TableHead>Date</TableHead><TableHead>Max Marks</TableHead></TableRow></TableHeader>
                 <TableBody>{exams.map(e => <TableRow key={e.id}><TableCell className="font-medium">{e.name}</TableCell><TableCell><Badge variant="outline" className="capitalize">{e.exam_type}</Badge></TableCell><TableCell>{e.subjects?.name || '—'}</TableCell><TableCell>{e.classes ? `${e.classes.name} ${e.classes.section}` : '—'}</TableCell><TableCell className="font-mono text-xs">{e.date || '—'}</TableCell><TableCell>{e.max_marks}</TableCell></TableRow>)}</TableBody></Table></div>
@@ -129,7 +222,13 @@ const AcademicsPage = () => {
           </TabsContent>
           <TabsContent value="grades">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Grade Records</CardTitle><RoleSection roles={['admin', 'teacher']}><AddDialog title="Add Grade" triggerLabel="Add Grade">{({ onClose }) => <AddGradeForm onClose={onClose} />}</AddDialog></RoleSection></CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-base">Grade Records</CardTitle>
+                <div className="flex gap-2">
+                  <ExportButton onClick={() => exportToCSV(grades.map(g => ({ student: g.students?.full_name || '', subject: g.subjects?.name || '', exam: g.exams?.name || '', marks: g.marks_obtained ?? '', grade: g.grade || '', remarks: g.remarks || '' })), 'grades')} />
+                  <RoleSection roles={['admin', 'teacher']}><AddDialog title="Add Grade" triggerLabel="Add Grade">{({ onClose }) => <AddGradeForm onClose={onClose} />}</AddDialog></RoleSection>
+                </div>
+              </CardHeader>
               <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : grades.length === 0 ? <p className="text-sm text-muted-foreground">No grades found.</p> : (
                 <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Student</TableHead><TableHead>Subject</TableHead><TableHead>Exam</TableHead><TableHead>Marks</TableHead><TableHead>Grade</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader>
                 <TableBody>{grades.map(g => <TableRow key={g.id}><TableCell className="font-medium">{g.students?.full_name || '—'}</TableCell><TableCell>{g.subjects?.name || '—'}</TableCell><TableCell>{g.exams?.name || '—'}</TableCell><TableCell>{g.marks_obtained ?? '—'}</TableCell><TableCell className="font-bold">{g.grade || '—'}</TableCell><TableCell className="text-sm text-muted-foreground">{g.remarks || '—'}</TableCell></TableRow>)}</TableBody></Table></div>
@@ -138,11 +237,55 @@ const AcademicsPage = () => {
           </TabsContent>
           <TabsContent value="subjects">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Subjects</CardTitle><RoleSection roles={['admin']}><AddDialog title="Add Subject" triggerLabel="Add Subject">{({ onClose }) => <AddSubjectForm onClose={onClose} />}</AddDialog></RoleSection></CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-base">Subjects</CardTitle>
+                <div className="flex gap-2">
+                  <ExportButton onClick={() => exportToCSV(subjects.map(s => ({ code: s.code || '', name: s.name, class: s.classes ? `${s.classes.name} ${s.classes.section}` : '' })), 'subjects')} />
+                  <RoleSection roles={['admin']}><AddDialog title="Add Subject" triggerLabel="Add Subject">{({ onClose }) => <AddSubjectForm onClose={onClose} />}</AddDialog></RoleSection>
+                </div>
+              </CardHeader>
               <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : subjects.length === 0 ? <p className="text-sm text-muted-foreground">No subjects found.</p> : (
                 <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Code</TableHead><TableHead>Name</TableHead><TableHead>Class</TableHead></TableRow></TableHeader>
                 <TableBody>{subjects.map(s => <TableRow key={s.id}><TableCell className="font-mono text-xs">{s.code || '—'}</TableCell><TableCell className="font-medium">{s.name}</TableCell><TableCell>{s.classes ? `${s.classes.name} ${s.classes.section}` : '—'}</TableCell></TableRow>)}</TableBody></Table></div>
               )}</CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="report">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Generate Progressive Report Card</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label>Select Student</Label>
+                    <Select value={reportStudent} onValueChange={setReportStudent}>
+                      <SelectTrigger><SelectValue placeholder="Choose student" /></SelectTrigger>
+                      <SelectContent>{students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label>Term</Label>
+                    <Select value={reportTerm} onValueChange={setReportTerm}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Term 1">Term 1</SelectItem>
+                        <SelectItem value="Term 2">Term 2</SelectItem>
+                        <SelectItem value="Term 3">Term 3</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {reportData ? (
+                  reportData.grades.length > 0 ? (
+                    <ReportCard {...reportData} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No grade records found for this student. Add grades first to generate a report.</p>
+                  )
+                ) : (
+                  <p className="text-sm text-muted-foreground">Select a student to generate their progressive report card.</p>
+                )}
+              </CardContent>
             </Card>
           </TabsContent>
         </Tabs>

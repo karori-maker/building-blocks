@@ -1,6 +1,7 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import ExportButton from '@/components/common/ExportButton';
 import { Package } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 
 const InventoryPage = () => {
   const [items, setItems] = useState<any[]>([]);
@@ -62,7 +64,7 @@ const InventoryPage = () => {
           </Card>
         )}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">All Items</CardTitle><AddDialog title="Add Inventory Item" triggerLabel="Add Item">{({ onClose }) => <AddForm onClose={onClose} />}</AddDialog></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">All Items</CardTitle><div className="flex gap-2"><ExportButton onClick={() => exportToCSV(items.map(i => ({ item: i.item_name, category: i.category || '', quantity: i.quantity, min_quantity: i.min_quantity, unit_price: i.unit_price || '', location: i.location || '', status: i.status })), 'inventory')} /><AddDialog title="Add Inventory Item" triggerLabel="Add Item">{({ onClose }) => <AddForm onClose={onClose} />}</AddDialog></div></CardHeader>
           <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : items.length === 0 ? <p className="text-sm text-muted-foreground">No inventory items found.</p> : (
             <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Item</TableHead><TableHead>Category</TableHead><TableHead>Quantity</TableHead><TableHead>Unit Price</TableHead><TableHead>Location</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
             <TableBody>{items.map(i => <TableRow key={i.id}><TableCell className="font-medium">{i.item_name}</TableCell><TableCell>{i.category || '—'}</TableCell><TableCell className={(i.quantity ?? 0) <= (i.min_quantity ?? 5) ? 'text-destructive font-medium' : ''}>{i.quantity}</TableCell><TableCell className="font-mono">{i.unit_price ? `$${Number(i.unit_price).toLocaleString()}` : '—'}</TableCell><TableCell>{i.location || '—'}</TableCell><TableCell><Badge variant="outline" className="capitalize">{i.status}</Badge></TableCell></TableRow>)}</TableBody></Table></div>

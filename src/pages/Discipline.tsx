@@ -1,6 +1,7 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import ExportButton from '@/components/common/ExportButton';
 import { Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 
 const severityColor: Record<string, string> = { minor: 'bg-yellow-100 text-yellow-800', moderate: 'bg-orange-100 text-orange-800', major: 'bg-red-100 text-red-800' };
 
@@ -66,7 +68,7 @@ const DisciplinePage = () => {
       </RoleSection>
       <RoleSection roles={['admin', 'teacher']}>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Discipline Incidents</CardTitle><AddDialog title="Record Incident" triggerLabel="Add Incident">{({ onClose }) => <AddForm onClose={onClose} />}</AddDialog></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Discipline Incidents</CardTitle><div className="flex gap-2"><ExportButton onClick={() => exportToCSV(incidents.map(i => ({ date: i.date, student: i.students?.full_name || '', description: i.description, severity: i.severity, action: i.action_taken || '', status: i.status })), 'discipline')} /><AddDialog title="Record Incident" triggerLabel="Add Incident">{({ onClose }) => <AddForm onClose={onClose} />}</AddDialog></div></CardHeader>
           <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : incidents.length === 0 ? <p className="text-sm text-muted-foreground">No incidents found.</p> : (
             <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Student</TableHead><TableHead>Description</TableHead><TableHead>Severity</TableHead><TableHead>Action Taken</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
             <TableBody>{incidents.map(i => <TableRow key={i.id}><TableCell className="font-mono text-xs">{i.date}</TableCell><TableCell className="font-medium">{i.students?.full_name || '—'}</TableCell><TableCell className="text-sm max-w-[250px] truncate">{i.description}</TableCell><TableCell><Badge variant="outline" className={severityColor[i.severity] || ''}>{i.severity}</Badge></TableCell><TableCell className="text-sm">{i.action_taken || '—'}</TableCell><TableCell><Badge variant="outline" className="capitalize">{i.status}</Badge></TableCell></TableRow>)}</TableBody></Table></div>

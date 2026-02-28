@@ -1,6 +1,7 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import ExportButton from '@/components/common/ExportButton';
 import { Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -77,6 +79,7 @@ const TimetablePage = () => {
             <CardTitle className="text-base">Weekly Timetable</CardTitle>
             <div className="flex gap-2">
               <Select value={selectedClass} onValueChange={setSelectedClass}><SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by class" /></SelectTrigger><SelectContent><SelectItem value="all">All Classes</SelectItem>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name} {c.section}</SelectItem>)}</SelectContent></Select>
+              <ExportButton onClick={() => exportToCSV(entries.map(e => ({ day: e.day_of_week, period: e.period, start: e.start_time || '', end: e.end_time || '', subject: e.subjects?.name || '', class: e.classes ? `${e.classes.name} ${e.classes.section}` : '', room: e.room || '' })), 'timetable')} />
               <AddDialog title="Add Timetable Entry" triggerLabel="Add Entry">{({ onClose }) => <AddForm onClose={onClose} />}</AddDialog>
             </div>
           </CardHeader>

@@ -1,6 +1,7 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import ExportButton from '@/components/common/ExportButton';
 import { MessageSquare } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 import { useAuth } from '@/contexts/AuthContext';
 
 const CommunicationPage = () => {
@@ -76,7 +78,26 @@ const CommunicationPage = () => {
       <RoleSection roles={['admin', 'teacher']}>
         <Tabs defaultValue="announcements">
           <TabsList><TabsTrigger value="announcements">Announcements</TabsTrigger><TabsTrigger value="messages">Messages</TabsTrigger></TabsList>
-          <TabsContent value="announcements"><AnnouncementsList /></TabsContent>
+          <TabsContent value="announcements">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-base">Announcements</CardTitle>
+                <div className="flex gap-2">
+                  <ExportButton onClick={() => exportToCSV(announcements.map(a => ({ title: a.title, content: a.content || '', priority: a.priority, target_role: a.target_role || 'all', date: a.created_at ? new Date(a.created_at).toLocaleDateString() : '' })), 'announcements')} />
+                  <RoleSection roles={['admin']}><AddDialog title="Post Announcement" triggerLabel="New Announcement">{({ onClose }) => <AddAnnouncementForm onClose={onClose} />}</AddDialog></RoleSection>
+                </div>
+              </CardHeader>
+              <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : announcements.length === 0 ? <p className="text-sm text-muted-foreground">No announcements found.</p> : (
+                <div className="space-y-4">{announcements.map(a => (
+                  <div key={a.id} className="border rounded-lg p-4 space-y-1">
+                    <div className="flex items-center gap-2"><h3 className="font-semibold">{a.title}</h3><Badge variant="outline" className="capitalize">{a.priority}</Badge>{a.target_role && <Badge variant="secondary" className="capitalize">{a.target_role}</Badge>}</div>
+                    <p className="text-sm text-muted-foreground">{a.content || 'No content'}</p>
+                    <p className="text-xs text-muted-foreground">{a.created_at ? new Date(a.created_at).toLocaleDateString() : ''}</p>
+                  </div>
+                ))}</div>
+              )}</CardContent>
+            </Card>
+          </TabsContent>
           <TabsContent value="messages">
             <Card><CardHeader><CardTitle className="text-base">Messages</CardTitle></CardHeader>
             <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : messages.length === 0 ? <p className="text-sm text-muted-foreground">No messages found.</p> : (

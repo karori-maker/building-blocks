@@ -1,6 +1,7 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import ExportButton from '@/components/common/ExportButton';
 import { CalendarDays } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 import { useAuth } from '@/contexts/AuthContext';
 
 const EventsPage = () => {
@@ -67,7 +69,7 @@ const EventsPage = () => {
           <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Event Types</p><div className="flex flex-wrap gap-1 mt-1">{types.map(t => <Badge key={t} variant="secondary" className="capitalize">{t}</Badge>)}</div></CardContent></Card>
         </div>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">All Events</CardTitle><AddDialog title="Create Event" triggerLabel="Add Event">{({ onClose }) => <AddForm onClose={onClose} />}</AddDialog></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">All Events</CardTitle><div className="flex gap-2"><ExportButton onClick={() => exportToCSV(events.map(e => ({ title: e.title, type: e.event_type, start: e.start_date, end: e.end_date || '', location: e.location || '', description: e.description || '' })), 'events')} /><AddDialog title="Create Event" triggerLabel="Add Event">{({ onClose }) => <AddForm onClose={onClose} />}</AddDialog></div></CardHeader>
           <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : events.length === 0 ? <p className="text-sm text-muted-foreground">No events found.</p> : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{events.map(e => <EventCard key={e.id} e={e} />)}</div>
           )}</CardContent>

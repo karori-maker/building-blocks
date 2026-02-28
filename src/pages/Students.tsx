@@ -1,17 +1,20 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import ExportButton from '@/components/common/ExportButton';
 import { Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 
 const StudentsPage = () => {
   const [students, setStudents] = useState<any[]>([]);
@@ -39,6 +42,28 @@ const StudentsPage = () => {
     acc[g] = (acc[g] || 0) + 1;
     return acc;
   }, {});
+
+  // Group students by class
+  const groupedByClass = classes.map(c => ({
+    ...c,
+    label: `${c.name} ${c.section}`,
+    students: students.filter(s => s.class_id === c.id),
+  })).filter(g => g.students.length > 0);
+
+  const unassigned = students.filter(s => !s.class_id);
+
+  const exportStudents = (list: any[], label: string) => {
+    exportToCSV(list.map(s => ({
+      student_id: s.student_id,
+      full_name: s.full_name,
+      class: s.classes ? `${s.classes.name} ${s.classes.section}` : '',
+      gender: s.gender || '',
+      email: s.email || '',
+      phone: s.phone || '',
+      roll_number: s.roll_number || '',
+      status: s.status || '',
+    })), `students_${label}`);
+  };
 
   const AddStudentForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ student_id: '', full_name: '', gender: 'male', class_id: '', roll_number: '', email: '' });
@@ -70,6 +95,15 @@ const StudentsPage = () => {
     );
   };
 
+  const StudentTable = ({ list }: { list: any[] }) => (
+    <Table>
+      <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Name</TableHead><TableHead>Class</TableHead><TableHead>Gender</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+      <TableBody>{list.map(s => (
+        <TableRow key={s.id}><TableCell className="font-mono text-xs">{s.student_id}</TableCell><TableCell className="font-medium">{s.full_name}</TableCell><TableCell>{s.classes ? `${s.classes.name} ${s.classes.section}` : '—'}</TableCell><TableCell className="capitalize">{s.gender || '—'}</TableCell><TableCell><Badge variant="outline" className="capitalize">{s.status}</Badge></TableCell></TableRow>
+      ))}</TableBody>
+    </Table>
+  );
+
   return (
     <ModulePage title="Students" description="Manage student records and profiles" icon={Users}>
       <RoleSection roles={['admin']}>
@@ -82,24 +116,54 @@ const StudentsPage = () => {
       </RoleSection>
 
       <RoleSection roles={['admin', 'teacher']}>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Student List</CardTitle>
-            <RoleSection roles={['admin']}><AddDialog title="Add Student" triggerLabel="Add Student">{({ onClose }) => <AddStudentForm onClose={onClose} />}</AddDialog></RoleSection>
-          </CardHeader>
-          <CardContent>
-            {loading ? <p className="text-sm text-muted-foreground">Loading...</p> : students.length === 0 ? <p className="text-sm text-muted-foreground">No students found.</p> : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader><TableRow><TableHead>ID</TableHead><TableHead>Name</TableHead><TableHead>Class</TableHead><TableHead>Gender</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
-                  <TableBody>{students.map(s => (
-                    <TableRow key={s.id}><TableCell className="font-mono text-xs">{s.student_id}</TableCell><TableCell className="font-medium">{s.full_name}</TableCell><TableCell>{s.classes ? `${s.classes.name} ${s.classes.section}` : '—'}</TableCell><TableCell className="capitalize">{s.gender || '—'}</TableCell><TableCell><Badge variant="outline" className="capitalize">{s.status}</Badge></TableCell></TableRow>
-                  ))}</TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="all">
+          <TabsList>
+            <TabsTrigger value="all">All Students</TabsTrigger>
+            <TabsTrigger value="by-class">By Class</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-base">Student List</CardTitle>
+                <div className="flex gap-2">
+                  <ExportButton onClick={() => exportStudents(students, 'all')} />
+                  <RoleSection roles={['admin']}><AddDialog title="Add Student" triggerLabel="Add Student">{({ onClose }) => <AddStudentForm onClose={onClose} />}</AddDialog></RoleSection>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loading ? <p className="text-sm text-muted-foreground">Loading...</p> : students.length === 0 ? <p className="text-sm text-muted-foreground">No students found.</p> : (
+                  <div className="overflow-x-auto"><StudentTable list={students} /></div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="by-class">
+            <div className="space-y-4">
+              {groupedByClass.map(g => (
+                <Card key={g.id}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-base">{g.label} <Badge variant="secondary" className="ml-2">{g.students.length} students</Badge></CardTitle>
+                    <ExportButton onClick={() => exportStudents(g.students, g.label.replace(/\s+/g, '_'))} label={`Export ${g.label}`} />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto"><StudentTable list={g.students} /></div>
+                  </CardContent>
+                </Card>
+              ))}
+              {unassigned.length > 0 && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-base">Unassigned <Badge variant="secondary" className="ml-2">{unassigned.length} students</Badge></CardTitle>
+                    <ExportButton onClick={() => exportStudents(unassigned, 'unassigned')} />
+                  </CardHeader>
+                  <CardContent><div className="overflow-x-auto"><StudentTable list={unassigned} /></div></CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </RoleSection>
     </ModulePage>
   );

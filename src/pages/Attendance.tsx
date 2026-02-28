@@ -1,6 +1,7 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import ExportButton from '@/components/common/ExportButton';
 import { ClipboardCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 
 const statusColor: Record<string, string> = { present: 'bg-green-100 text-green-800', absent: 'bg-red-100 text-red-800', late: 'bg-yellow-100 text-yellow-800', 'half-day': 'bg-orange-100 text-orange-800' };
 
@@ -84,6 +86,7 @@ const AttendancePage = () => {
             <CardTitle className="text-base">Attendance Records</CardTitle>
             <div className="flex gap-2">
               <Select value={selectedClass} onValueChange={setSelectedClass}><SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter by class" /></SelectTrigger><SelectContent><SelectItem value="all">All Classes</SelectItem>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name} {c.section}</SelectItem>)}</SelectContent></Select>
+              <ExportButton onClick={() => exportToCSV(records.map(r => ({ date: r.date, student: r.students?.full_name || '', class: r.classes ? `${r.classes.name} ${r.classes.section}` : '', status: r.status, remarks: r.remarks || '' })), 'attendance')} />
               <RoleSection roles={['admin', 'teacher']}><AddDialog title="Record Attendance" triggerLabel="Mark Attendance">{({ onClose }) => <AddForm onClose={onClose} />}</AddDialog></RoleSection>
             </div>
           </CardHeader>

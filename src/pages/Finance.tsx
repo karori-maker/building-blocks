@@ -1,6 +1,7 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import ExportButton from '@/components/common/ExportButton';
 import { DollarSign } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 
 const FinancePage = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -57,7 +59,7 @@ const FinancePage = () => {
           <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Categories</p><div className="flex flex-wrap gap-1 mt-1">{categories.map(c => <Badge key={c} variant="secondary" className="capitalize">{c}</Badge>)}</div></CardContent></Card>
         </div>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Transaction History</CardTitle><AddDialog title="Add Transaction" triggerLabel="Add Transaction">{({ onClose }) => <AddForm onClose={onClose} />}</AddDialog></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Transaction History</CardTitle><div className="flex gap-2"><ExportButton onClick={() => exportToCSV(transactions.map(t => ({ date: t.date, type: t.type, category: t.category, description: t.description || '', amount: t.amount })), 'finance_transactions')} /><AddDialog title="Add Transaction" triggerLabel="Add Transaction">{({ onClose }) => <AddForm onClose={onClose} />}</AddDialog></div></CardHeader>
           <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : transactions.length === 0 ? <p className="text-sm text-muted-foreground">No transactions found.</p> : (
             <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Category</TableHead><TableHead>Description</TableHead><TableHead>Amount</TableHead></TableRow></TableHeader>
             <TableBody>{transactions.map(t => <TableRow key={t.id}><TableCell className="font-mono text-xs">{t.date}</TableCell><TableCell><Badge variant="outline" className={t.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>{t.type}</Badge></TableCell><TableCell className="capitalize">{t.category}</TableCell><TableCell className="text-sm text-muted-foreground">{t.description || '—'}</TableCell><TableCell className="font-mono font-medium">${Number(t.amount).toLocaleString()}</TableCell></TableRow>)}</TableBody></Table></div>

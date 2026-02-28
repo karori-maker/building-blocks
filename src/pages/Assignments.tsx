@@ -1,6 +1,7 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import ExportButton from '@/components/common/ExportButton';
 import { FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 
 const AssignmentsPage = () => {
   const [assignments, setAssignments] = useState<any[]>([]);
@@ -75,14 +77,21 @@ const AssignmentsPage = () => {
         <Tabs defaultValue="assignments">
           <TabsList><TabsTrigger value="assignments">Assignments</TabsTrigger><TabsTrigger value="submissions">Submissions</TabsTrigger></TabsList>
           <TabsContent value="assignments">
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">All Assignments</CardTitle><AddDialog title="Add Assignment" triggerLabel="Add Assignment">{({ onClose }) => <AddForm onClose={onClose} />}</AddDialog></CardHeader>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">All Assignments</CardTitle>
+              <div className="flex gap-2">
+                <ExportButton onClick={() => exportToCSV(assignments.map(a => ({ title: a.title, subject: a.subjects?.name || '', class: a.classes ? `${a.classes.name} ${a.classes.section}` : '', due_date: a.due_date || '', max_marks: a.max_marks, status: a.status })), 'assignments')} />
+                <AddDialog title="Add Assignment" triggerLabel="Add Assignment">{({ onClose }) => <AddForm onClose={onClose} />}</AddDialog>
+              </div>
+            </CardHeader>
             <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : assignments.length === 0 ? <p className="text-sm text-muted-foreground">No assignments found.</p> : (
               <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Subject</TableHead><TableHead>Class</TableHead><TableHead>Due Date</TableHead><TableHead>Max Marks</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
               <TableBody>{assignments.map(a => <TableRow key={a.id}><TableCell className="font-medium">{a.title}</TableCell><TableCell>{a.subjects?.name || '—'}</TableCell><TableCell>{a.classes ? `${a.classes.name} ${a.classes.section}` : '—'}</TableCell><TableCell className="font-mono text-xs">{a.due_date || '—'}</TableCell><TableCell>{a.max_marks}</TableCell><TableCell><Badge variant="outline" className="capitalize">{a.status}</Badge></TableCell></TableRow>)}</TableBody></Table></div>
             )}</CardContent></Card>
           </TabsContent>
           <TabsContent value="submissions">
-            <Card><CardHeader><CardTitle className="text-base">Submissions</CardTitle></CardHeader>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Submissions</CardTitle>
+              <ExportButton onClick={() => exportToCSV(submissions.map(s => ({ assignment: s.assignments?.title || '', student: s.students?.full_name || '', submitted: s.submitted_at ? new Date(s.submitted_at).toLocaleDateString() : '', marks: s.marks ?? '', status: s.status, feedback: s.feedback || '' })), 'submissions')} />
+            </CardHeader>
             <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : submissions.length === 0 ? <p className="text-sm text-muted-foreground">No submissions found.</p> : (
               <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Assignment</TableHead><TableHead>Student</TableHead><TableHead>Submitted</TableHead><TableHead>Marks</TableHead><TableHead>Status</TableHead><TableHead>Feedback</TableHead></TableRow></TableHeader>
               <TableBody>{submissions.map(s => <TableRow key={s.id}><TableCell className="font-medium">{s.assignments?.title || '—'}</TableCell><TableCell>{s.students?.full_name || '—'}</TableCell><TableCell className="font-mono text-xs">{s.submitted_at ? new Date(s.submitted_at).toLocaleDateString() : '—'}</TableCell><TableCell>{s.marks ?? '—'}</TableCell><TableCell><Badge variant="outline" className="capitalize">{s.status}</Badge></TableCell><TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">{s.feedback || '—'}</TableCell></TableRow>)}</TableBody></Table></div>

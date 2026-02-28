@@ -1,6 +1,7 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import ExportButton from '@/components/common/ExportButton';
 import { Bus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 
 const TransportPage = () => {
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -81,14 +83,14 @@ const TransportPage = () => {
         <Tabs defaultValue="vehicles">
           <TabsList><TabsTrigger value="vehicles">Vehicles</TabsTrigger><TabsTrigger value="routes">Routes</TabsTrigger></TabsList>
           <TabsContent value="vehicles">
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Vehicles</CardTitle><AddDialog title="Add Vehicle" triggerLabel="Add Vehicle">{({ onClose }) => <AddVehicleForm onClose={onClose} />}</AddDialog></CardHeader>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Vehicles</CardTitle><div className="flex gap-2"><ExportButton onClick={() => exportToCSV(vehicles.map(v => ({ vehicle_number: v.vehicle_number, driver: v.driver_name || '', phone: v.driver_phone || '', capacity: v.capacity, status: v.status })), 'vehicles')} /><AddDialog title="Add Vehicle" triggerLabel="Add Vehicle">{({ onClose }) => <AddVehicleForm onClose={onClose} />}</AddDialog></div></CardHeader>
             <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : vehicles.length === 0 ? <p className="text-sm text-muted-foreground">No vehicles found.</p> : (
               <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Vehicle No</TableHead><TableHead>Driver</TableHead><TableHead>Phone</TableHead><TableHead>Capacity</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
               <TableBody>{vehicles.map(v => <TableRow key={v.id}><TableCell className="font-mono font-medium">{v.vehicle_number}</TableCell><TableCell>{v.driver_name || '—'}</TableCell><TableCell>{v.driver_phone || '—'}</TableCell><TableCell>{v.capacity}</TableCell><TableCell><Badge variant="outline" className="capitalize">{v.status}</Badge></TableCell></TableRow>)}</TableBody></Table></div>
             )}</CardContent></Card>
           </TabsContent>
           <TabsContent value="routes">
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Routes</CardTitle><AddDialog title="Add Route" triggerLabel="Add Route">{({ onClose }) => <AddRouteForm onClose={onClose} />}</AddDialog></CardHeader>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Routes</CardTitle><div className="flex gap-2"><ExportButton onClick={() => exportToCSV(routes.map(r => ({ route: r.route_name, vehicle: r.transport_vehicles?.vehicle_number || '', stops: Array.isArray(r.stops) ? r.stops.join(', ') : '' })), 'routes')} /><AddDialog title="Add Route" triggerLabel="Add Route">{({ onClose }) => <AddRouteForm onClose={onClose} />}</AddDialog></div></CardHeader>
             <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : routes.length === 0 ? <p className="text-sm text-muted-foreground">No routes found.</p> : (
               <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Route Name</TableHead><TableHead>Vehicle</TableHead><TableHead>Stops</TableHead></TableRow></TableHeader>
               <TableBody>{routes.map(r => <TableRow key={r.id}><TableCell className="font-medium">{r.route_name}</TableCell><TableCell className="font-mono">{r.transport_vehicles?.vehicle_number || '—'}</TableCell><TableCell className="text-sm">{Array.isArray(r.stops) ? r.stops.join(', ') : '—'}</TableCell></TableRow>)}</TableBody></Table></div>
