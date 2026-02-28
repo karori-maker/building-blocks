@@ -1,6 +1,7 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import ExportButton from '@/components/common/ExportButton';
 import { Library } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 
 const LibraryPage = () => {
   const [books, setBooks] = useState<any[]>([]);
@@ -92,14 +94,14 @@ const LibraryPage = () => {
         <Tabs defaultValue="catalog">
           <TabsList><TabsTrigger value="catalog">Book Catalog</TabsTrigger><TabsTrigger value="issues">Issues/Returns</TabsTrigger></TabsList>
           <TabsContent value="catalog">
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Books</CardTitle><RoleSection roles={['admin']}><AddDialog title="Add Book" triggerLabel="Add Book">{({ onClose }) => <AddBookForm onClose={onClose} />}</AddDialog></RoleSection></CardHeader>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Books</CardTitle><div className="flex gap-2"><ExportButton onClick={() => exportToCSV(books.map(b => ({ title: b.title, author: b.author || '', isbn: b.isbn || '', category: b.category || '', available: b.available_copies, total: b.total_copies, shelf: b.shelf_location || '' })), 'library_books')} /><RoleSection roles={['admin']}><AddDialog title="Add Book" triggerLabel="Add Book">{({ onClose }) => <AddBookForm onClose={onClose} />}</AddDialog></RoleSection></div></CardHeader>
             <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : books.length === 0 ? <p className="text-sm text-muted-foreground">No books found.</p> : (
               <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Author</TableHead><TableHead>ISBN</TableHead><TableHead>Category</TableHead><TableHead>Available</TableHead><TableHead>Total</TableHead><TableHead>Shelf</TableHead></TableRow></TableHeader>
               <TableBody>{books.map(b => <TableRow key={b.id}><TableCell className="font-medium">{b.title}</TableCell><TableCell>{b.author || '—'}</TableCell><TableCell className="font-mono text-xs">{b.isbn || '—'}</TableCell><TableCell>{b.category || '—'}</TableCell><TableCell className={b.available_copies === 0 ? 'text-destructive font-medium' : ''}>{b.available_copies}</TableCell><TableCell>{b.total_copies}</TableCell><TableCell>{b.shelf_location || '—'}</TableCell></TableRow>)}</TableBody></Table></div>
             )}</CardContent></Card>
           </TabsContent>
           <TabsContent value="issues">
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Book Issues</CardTitle><RoleSection roles={['admin']}><AddDialog title="Issue Book" triggerLabel="Issue Book">{({ onClose }) => <AddIssueForm onClose={onClose} />}</AddDialog></RoleSection></CardHeader>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Book Issues</CardTitle><div className="flex gap-2"><ExportButton onClick={() => exportToCSV(issues.map(i => ({ book: i.library_books?.title || '', student: i.students?.full_name || '', issued: i.issue_date, due: i.due_date || '', returned: i.return_date || '', fine: i.fine, status: i.status })), 'book_issues')} /><RoleSection roles={['admin']}><AddDialog title="Issue Book" triggerLabel="Issue Book">{({ onClose }) => <AddIssueForm onClose={onClose} />}</AddDialog></RoleSection></div></CardHeader>
             <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : issues.length === 0 ? <p className="text-sm text-muted-foreground">No issues found.</p> : (
               <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Book</TableHead><TableHead>Student</TableHead><TableHead>Issued</TableHead><TableHead>Due</TableHead><TableHead>Returned</TableHead><TableHead>Fine</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
               <TableBody>{issues.map(i => <TableRow key={i.id}><TableCell className="font-medium">{i.library_books?.title || '—'}</TableCell><TableCell>{i.students?.full_name || '—'}</TableCell><TableCell className="font-mono text-xs">{i.issue_date}</TableCell><TableCell className="font-mono text-xs">{i.due_date || '—'}</TableCell><TableCell className="font-mono text-xs">{i.return_date || '—'}</TableCell><TableCell className="font-mono">{i.fine > 0 ? `$${i.fine}` : '—'}</TableCell><TableCell><Badge variant="outline" className="capitalize">{i.status}</Badge></TableCell></TableRow>)}</TableBody></Table></div>

@@ -1,6 +1,7 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import ExportButton from '@/components/common/ExportButton';
 import { CreditCard } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 
 const FeesPage = () => {
   const [structure, setStructure] = useState<any[]>([]);
@@ -93,14 +95,24 @@ const FeesPage = () => {
         <Tabs defaultValue="structure">
           <TabsList><TabsTrigger value="structure">Fee Structure</TabsTrigger><TabsTrigger value="payments">Payments</TabsTrigger></TabsList>
           <TabsContent value="structure">
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Fee Structure</CardTitle><AddDialog title="Add Fee Type" triggerLabel="Add Fee Type">{({ onClose }) => <AddFeeForm onClose={onClose} />}</AddDialog></CardHeader>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Fee Structure</CardTitle>
+              <div className="flex gap-2">
+                <ExportButton onClick={() => exportToCSV(structure.map(s => ({ fee_type: s.fee_type, class: s.classes ? `${s.classes.name} ${s.classes.section}` : 'All', amount: s.amount, academic_year: s.academic_year })), 'fee_structure')} />
+                <AddDialog title="Add Fee Type" triggerLabel="Add Fee Type">{({ onClose }) => <AddFeeForm onClose={onClose} />}</AddDialog>
+              </div>
+            </CardHeader>
             <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : structure.length === 0 ? <p className="text-sm text-muted-foreground">No fee structure found.</p> : (
               <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Fee Type</TableHead><TableHead>Class</TableHead><TableHead>Amount</TableHead><TableHead>Academic Year</TableHead></TableRow></TableHeader>
               <TableBody>{structure.map(s => <TableRow key={s.id}><TableCell className="font-medium capitalize">{s.fee_type}</TableCell><TableCell>{s.classes ? `${s.classes.name} ${s.classes.section}` : 'All'}</TableCell><TableCell className="font-mono">${Number(s.amount).toLocaleString()}</TableCell><TableCell>{s.academic_year}</TableCell></TableRow>)}</TableBody></Table></div>
             )}</CardContent></Card>
           </TabsContent>
           <TabsContent value="payments">
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Payment Records</CardTitle><AddDialog title="Record Payment" triggerLabel="Add Payment">{({ onClose }) => <AddPaymentForm onClose={onClose} />}</AddDialog></CardHeader>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Payment Records</CardTitle>
+              <div className="flex gap-2">
+                <ExportButton onClick={() => exportToCSV(payments.map(p => ({ receipt: p.receipt_number || '', student: p.students?.full_name || '', fee_type: p.fee_structure?.fee_type || '', amount: p.amount_paid, method: p.payment_method, date: p.payment_date, status: p.status })), 'payments')} />
+                <AddDialog title="Record Payment" triggerLabel="Add Payment">{({ onClose }) => <AddPaymentForm onClose={onClose} />}</AddDialog>
+              </div>
+            </CardHeader>
             <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : payments.length === 0 ? <p className="text-sm text-muted-foreground">No payments found.</p> : (
               <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Receipt</TableHead><TableHead>Student</TableHead><TableHead>Fee Type</TableHead><TableHead>Amount</TableHead><TableHead>Method</TableHead><TableHead>Date</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
               <TableBody>{payments.map(p => <TableRow key={p.id}><TableCell className="font-mono text-xs">{p.receipt_number || '—'}</TableCell><TableCell className="font-medium">{p.students?.full_name || '—'}</TableCell><TableCell className="capitalize">{p.fee_structure?.fee_type || '—'}</TableCell><TableCell className="font-mono">${Number(p.amount_paid).toLocaleString()}</TableCell><TableCell className="capitalize">{p.payment_method}</TableCell><TableCell className="font-mono text-xs">{p.payment_date}</TableCell><TableCell><Badge variant="outline" className="capitalize">{p.status}</Badge></TableCell></TableRow>)}</TableBody></Table></div>

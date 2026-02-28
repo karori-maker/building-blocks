@@ -1,16 +1,19 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import ExportButton from '@/components/common/ExportButton';
 import { UserCog } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { exportToCSV } from '@/lib/export';
 
 const StaffPage = () => {
   const [staff, setStaff] = useState<any[]>([]);
@@ -21,6 +24,25 @@ const StaffPage = () => {
 
   const totalActive = staff.filter(s => s.status === 'active').length;
   const departments = [...new Set(staff.map(s => s.department).filter(Boolean))];
+
+  const groupedByDept = departments.map(d => ({
+    department: d,
+    members: staff.filter(s => s.department === d),
+  }));
+  const noDept = staff.filter(s => !s.department);
+
+  const exportStaff = (list: any[], label: string) => {
+    exportToCSV(list.map(s => ({
+      employee_id: s.employee_id,
+      full_name: s.full_name,
+      designation: s.designation || '',
+      department: s.department || '',
+      qualification: s.qualification || '',
+      email: s.email || '',
+      phone: s.phone || '',
+      status: s.status || '',
+    })), `staff_${label}`);
+  };
 
   const AddForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ employee_id: '', full_name: '', designation: '', department: '', qualification: '', email: '', salary: '' });
@@ -47,6 +69,11 @@ const StaffPage = () => {
     );
   };
 
+  const StaffTable = ({ list }: { list: any[] }) => (
+    <Table><TableHeader><TableRow><TableHead>Employee ID</TableHead><TableHead>Name</TableHead><TableHead>Designation</TableHead><TableHead>Department</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+    <TableBody>{list.map(s => (<TableRow key={s.id}><TableCell className="font-mono text-xs">{s.employee_id}</TableCell><TableCell className="font-medium">{s.full_name}</TableCell><TableCell>{s.designation || '—'}</TableCell><TableCell>{s.department || '—'}</TableCell><TableCell><Badge variant="outline" className="capitalize">{s.status}</Badge></TableCell></TableRow>))}</TableBody></Table>
+  );
+
   return (
     <ModulePage title="Staff" description="Manage staff records" icon={UserCog}>
       <RoleSection roles={['admin']}>
@@ -55,20 +82,53 @@ const StaffPage = () => {
           <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Active Staff</p><p className="text-2xl font-bold text-green-600">{totalActive}</p></CardContent></Card>
           <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Departments</p><div className="flex flex-wrap gap-1 mt-1">{departments.map(d => <Badge key={d} variant="secondary">{d}</Badge>)}</div></CardContent></Card>
         </div>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Staff List</CardTitle>
-            <AddDialog title="Add Staff" triggerLabel="Add Staff">{({ onClose }) => <AddForm onClose={onClose} />}</AddDialog>
-          </CardHeader>
-          <CardContent>
-            {loading ? <p className="text-sm text-muted-foreground">Loading...</p> : staff.length === 0 ? <p className="text-sm text-muted-foreground">No staff found.</p> : (
-              <div className="overflow-x-auto">
-                <Table><TableHeader><TableRow><TableHead>Employee ID</TableHead><TableHead>Name</TableHead><TableHead>Designation</TableHead><TableHead>Department</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
-                <TableBody>{staff.map(s => (<TableRow key={s.id}><TableCell className="font-mono text-xs">{s.employee_id}</TableCell><TableCell className="font-medium">{s.full_name}</TableCell><TableCell>{s.designation || '—'}</TableCell><TableCell>{s.department || '—'}</TableCell><TableCell><Badge variant="outline" className="capitalize">{s.status}</Badge></TableCell></TableRow>))}</TableBody></Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
+        <Tabs defaultValue="all">
+          <TabsList>
+            <TabsTrigger value="all">All Staff</TabsTrigger>
+            <TabsTrigger value="by-dept">By Department</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-base">Staff List</CardTitle>
+                <div className="flex gap-2">
+                  <ExportButton onClick={() => exportStaff(staff, 'all')} />
+                  <AddDialog title="Add Staff" triggerLabel="Add Staff">{({ onClose }) => <AddForm onClose={onClose} />}</AddDialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loading ? <p className="text-sm text-muted-foreground">Loading...</p> : staff.length === 0 ? <p className="text-sm text-muted-foreground">No staff found.</p> : (
+                  <div className="overflow-x-auto"><StaffTable list={staff} /></div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="by-dept">
+            <div className="space-y-4">
+              {groupedByDept.map(g => (
+                <Card key={g.department}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-base">{g.department} <Badge variant="secondary" className="ml-2">{g.members.length}</Badge></CardTitle>
+                    <ExportButton onClick={() => exportStaff(g.members, g.department.replace(/\s+/g, '_'))} />
+                  </CardHeader>
+                  <CardContent><div className="overflow-x-auto"><StaffTable list={g.members} /></div></CardContent>
+                </Card>
+              ))}
+              {noDept.length > 0 && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-base">No Department <Badge variant="secondary" className="ml-2">{noDept.length}</Badge></CardTitle>
+                    <ExportButton onClick={() => exportStaff(noDept, 'no_department')} />
+                  </CardHeader>
+                  <CardContent><div className="overflow-x-auto"><StaffTable list={noDept} /></div></CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </RoleSection>
     </ModulePage>
   );
