@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Users, UserCog, ClipboardCheck, BookOpen, Calendar,
   FileText, CreditCard, DollarSign, Library, Bus, Package, Shield,
-  MessageSquare, CalendarDays, Settings, LogOut, GraduationCap, Clock
+  MessageSquare, CalendarDays, Settings, LogOut, GraduationCap, Clock, PackageCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -26,6 +26,7 @@ const navItems: NavItem[] = [
   { label: 'Discipline', icon: Shield, path: '/discipline', roles: ['admin', 'teacher'] },
   { label: 'Communication', icon: MessageSquare, path: '/communication', roles: ['admin', 'teacher', 'student', 'parent'] },
   { label: 'Events', icon: CalendarDays, path: '/events', roles: ['admin', 'teacher', 'student', 'parent'] },
+  { label: 'Materials', icon: PackageCheck, path: '/materials', roles: ['admin', 'teacher', 'student', 'parent'] },
   { label: 'Settings', icon: Settings, path: '/settings', roles: ['admin'] },
 ];
 

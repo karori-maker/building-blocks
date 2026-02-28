@@ -2,7 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, NavLink } from 'react-router-dom';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Menu, GraduationCap, LogOut, LayoutDashboard, Users, UserCog, ClipboardCheck, BookOpen, Clock, FileText, CreditCard, DollarSign, Library, Bus, Package, Shield, MessageSquare, CalendarDays, Settings } from 'lucide-react';
+import { Menu, GraduationCap, LogOut, LayoutDashboard, Users, UserCog, ClipboardCheck, BookOpen, Clock, FileText, CreditCard, DollarSign, Library, Bus, Package, Shield, MessageSquare, CalendarDays, Settings, PackageCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -10,7 +10,7 @@ const iconMap: Record<string, React.ElementType> = {
   Dashboard: LayoutDashboard, Students: Users, Staff: UserCog, Attendance: ClipboardCheck,
   Academics: BookOpen, Timetable: Clock, Assignments: FileText, Fees: CreditCard,
   Finance: DollarSign, Library: Library, Transport: Bus, Inventory: Package,
-  Discipline: Shield, Communication: MessageSquare, Events: CalendarDays, Settings: Settings,
+  Discipline: Shield, Communication: MessageSquare, Events: CalendarDays, Materials: PackageCheck, Settings: Settings,
 };
 
 const navItems = [
@@ -29,6 +29,7 @@ const navItems = [
   { label: 'Discipline', path: '/discipline', roles: ['admin','teacher'] },
   { label: 'Communication', path: '/communication', roles: ['admin','teacher','student','parent'] },
   { label: 'Events', path: '/events', roles: ['admin','teacher','student','parent'] },
+  { label: 'Materials', path: '/materials', roles: ['admin','teacher','student','parent'] },
   { label: 'Settings', path: '/settings', roles: ['admin'] },
 ];
 

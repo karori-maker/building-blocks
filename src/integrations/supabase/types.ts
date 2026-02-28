@@ -756,6 +756,48 @@ export type Database = {
         }
         Relationships: []
       }
+      required_materials: {
+        Row: {
+          class_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          item_name: string
+          subject_id: string | null
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          item_name: string
+          subject_id?: string | null
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          item_name?: string
+          subject_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "required_materials_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "required_materials_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       school_settings: {
         Row: {
           academic_year: string | null
@@ -842,6 +884,45 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      student_material_checks: {
+        Row: {
+          checked_at: string | null
+          id: string
+          is_obtained: boolean
+          material_id: string
+          student_id: string
+        }
+        Insert: {
+          checked_at?: string | null
+          id?: string
+          is_obtained?: boolean
+          material_id: string
+          student_id: string
+        }
+        Update: {
+          checked_at?: string | null
+          id?: string
+          is_obtained?: boolean
+          material_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_material_checks_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "required_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_material_checks_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       students: {
         Row: {
