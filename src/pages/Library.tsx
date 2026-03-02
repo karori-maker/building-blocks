@@ -1,6 +1,8 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import EditDialog from '@/components/common/EditDialog';
+import DeleteButton from '@/components/common/DeleteButton';
 import ExportButton from '@/components/common/ExportButton';
 import { Library } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -36,48 +38,28 @@ const LibraryPage = () => {
   const available = books.reduce((s, b) => s + (b.available_copies || 0), 0);
   const overdue = issues.filter(i => i.status === 'issued' && i.due_date && new Date(i.due_date) < new Date()).length;
 
+  const handleDeleteBook = async (id: string) => { const { error } = await supabase.from('library_books').delete().eq('id', id); if (error) toast.error(error.message); else { toast.success('Deleted'); fetchData(); } };
+  const handleDeleteIssue = async (id: string) => { const { error } = await supabase.from('book_issues').delete().eq('id', id); if (error) toast.error(error.message); else { toast.success('Deleted'); fetchData(); } };
+
   const AddBookForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ title: '', author: '', isbn: '', category: '', total_copies: '1', shelf_location: '' });
     const [saving, setSaving] = useState(false);
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault(); setSaving(true);
-      const copies = Number(form.total_copies);
-      const { error } = await supabase.from('library_books').insert({ title: form.title, author: form.author || null, isbn: form.isbn || null, category: form.category || null, total_copies: copies, available_copies: copies, shelf_location: form.shelf_location || null });
-      if (error) toast.error(error.message); else { toast.success('Book added'); onClose(); fetchData(); }
-      setSaving(false);
-    };
-    return (
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="space-y-1"><Label>Title *</Label><Input required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1"><Label>Author</Label><Input value={form.author} onChange={e => setForm(f => ({ ...f, author: e.target.value }))} /></div>
-          <div className="space-y-1"><Label>ISBN</Label><Input value={form.isbn} onChange={e => setForm(f => ({ ...f, isbn: e.target.value }))} /></div>
-          <div className="space-y-1"><Label>Category</Label><Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} /></div>
-          <div className="space-y-1"><Label>Copies</Label><Input type="number" min={1} value={form.total_copies} onChange={e => setForm(f => ({ ...f, total_copies: e.target.value }))} /></div>
-          <div className="space-y-1"><Label>Shelf Location</Label><Input value={form.shelf_location} onChange={e => setForm(f => ({ ...f, shelf_location: e.target.value }))} /></div>
-        </div>
-        <Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Add Book'}</Button>
-      </form>
-    );
+    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const copies = Number(form.total_copies); const { error } = await supabase.from('library_books').insert({ title: form.title, author: form.author || null, isbn: form.isbn || null, category: form.category || null, total_copies: copies, available_copies: copies, shelf_location: form.shelf_location || null }); if (error) toast.error(error.message); else { toast.success('Book added'); onClose(); fetchData(); } setSaving(false); };
+    return (<form onSubmit={handleSubmit} className="space-y-3"><div className="space-y-1"><Label>Title *</Label><Input required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div><div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Author</Label><Input value={form.author} onChange={e => setForm(f => ({ ...f, author: e.target.value }))} /></div><div className="space-y-1"><Label>ISBN</Label><Input value={form.isbn} onChange={e => setForm(f => ({ ...f, isbn: e.target.value }))} /></div><div className="space-y-1"><Label>Category</Label><Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} /></div><div className="space-y-1"><Label>Copies</Label><Input type="number" min={1} value={form.total_copies} onChange={e => setForm(f => ({ ...f, total_copies: e.target.value }))} /></div><div className="space-y-1"><Label>Shelf Location</Label><Input value={form.shelf_location} onChange={e => setForm(f => ({ ...f, shelf_location: e.target.value }))} /></div></div><Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Add Book'}</Button></form>);
+  };
+
+  const EditBookForm = ({ item, onClose }: { item: any; onClose: () => void }) => {
+    const [form, setForm] = useState({ title: item.title, author: item.author || '', isbn: item.isbn || '', category: item.category || '', total_copies: item.total_copies?.toString() || '1', available_copies: item.available_copies?.toString() || '1', shelf_location: item.shelf_location || '' });
+    const [saving, setSaving] = useState(false);
+    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('library_books').update({ title: form.title, author: form.author || null, isbn: form.isbn || null, category: form.category || null, total_copies: Number(form.total_copies), available_copies: Number(form.available_copies), shelf_location: form.shelf_location || null }).eq('id', item.id); if (error) toast.error(error.message); else { toast.success('Updated'); onClose(); fetchData(); } setSaving(false); };
+    return (<form onSubmit={handleSubmit} className="space-y-3"><div className="space-y-1"><Label>Title *</Label><Input required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div><div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Author</Label><Input value={form.author} onChange={e => setForm(f => ({ ...f, author: e.target.value }))} /></div><div className="space-y-1"><Label>ISBN</Label><Input value={form.isbn} onChange={e => setForm(f => ({ ...f, isbn: e.target.value }))} /></div><div className="space-y-1"><Label>Category</Label><Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} /></div><div className="space-y-1"><Label>Total Copies</Label><Input type="number" value={form.total_copies} onChange={e => setForm(f => ({ ...f, total_copies: e.target.value }))} /></div><div className="space-y-1"><Label>Available</Label><Input type="number" value={form.available_copies} onChange={e => setForm(f => ({ ...f, available_copies: e.target.value }))} /></div></div><Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</Button></form>);
   };
 
   const AddIssueForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ book_id: '', student_id: '', due_date: '' });
     const [saving, setSaving] = useState(false);
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('book_issues').insert({ book_id: form.book_id, student_id: form.student_id, due_date: form.due_date || null });
-      if (error) toast.error(error.message); else { toast.success('Book issued'); onClose(); fetchData(); }
-      setSaving(false);
-    };
-    return (
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="space-y-1"><Label>Book *</Label><Select value={form.book_id} onValueChange={v => setForm(f => ({ ...f, book_id: v }))}><SelectTrigger><SelectValue placeholder="Select book" /></SelectTrigger><SelectContent>{books.map(b => <SelectItem key={b.id} value={b.id}>{b.title}</SelectItem>)}</SelectContent></Select></div>
-        <div className="space-y-1"><Label>Student *</Label><Select value={form.student_id} onValueChange={v => setForm(f => ({ ...f, student_id: v }))}><SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger><SelectContent>{students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}</SelectContent></Select></div>
-        <div className="space-y-1"><Label>Due Date</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div>
-        <Button type="submit" className="w-full" disabled={saving || !form.book_id || !form.student_id}>{saving ? 'Saving...' : 'Issue Book'}</Button>
-      </form>
-    );
+    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('book_issues').insert({ book_id: form.book_id, student_id: form.student_id, due_date: form.due_date || null }); if (error) toast.error(error.message); else { toast.success('Book issued'); onClose(); fetchData(); } setSaving(false); };
+    return (<form onSubmit={handleSubmit} className="space-y-3"><div className="space-y-1"><Label>Book *</Label><Select value={form.book_id} onValueChange={v => setForm(f => ({ ...f, book_id: v }))}><SelectTrigger><SelectValue placeholder="Select book" /></SelectTrigger><SelectContent>{books.map(b => <SelectItem key={b.id} value={b.id}>{b.title}</SelectItem>)}</SelectContent></Select></div><div className="space-y-1"><Label>Student *</Label><Select value={form.student_id} onValueChange={v => setForm(f => ({ ...f, student_id: v }))}><SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger><SelectContent>{students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}</SelectContent></Select></div><div className="space-y-1"><Label>Due Date</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div><Button type="submit" className="w-full" disabled={saving || !form.book_id || !form.student_id}>{saving ? 'Saving...' : 'Issue Book'}</Button></form>);
   };
 
   return (
@@ -96,15 +78,17 @@ const LibraryPage = () => {
           <TabsContent value="catalog">
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Books</CardTitle><div className="flex gap-2"><ExportButton onClick={() => exportToCSV(books.map(b => ({ title: b.title, author: b.author || '', isbn: b.isbn || '', category: b.category || '', available: b.available_copies, total: b.total_copies, shelf: b.shelf_location || '' })), 'library_books')} /><RoleSection roles={['admin']}><AddDialog title="Add Book" triggerLabel="Add Book">{({ onClose }) => <AddBookForm onClose={onClose} />}</AddDialog></RoleSection></div></CardHeader>
             <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : books.length === 0 ? <p className="text-sm text-muted-foreground">No books found.</p> : (
-              <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Author</TableHead><TableHead>ISBN</TableHead><TableHead>Category</TableHead><TableHead>Available</TableHead><TableHead>Total</TableHead><TableHead>Shelf</TableHead></TableRow></TableHeader>
-              <TableBody>{books.map(b => <TableRow key={b.id}><TableCell className="font-medium">{b.title}</TableCell><TableCell>{b.author || '—'}</TableCell><TableCell className="font-mono text-xs">{b.isbn || '—'}</TableCell><TableCell>{b.category || '—'}</TableCell><TableCell className={b.available_copies === 0 ? 'text-destructive font-medium' : ''}>{b.available_copies}</TableCell><TableCell>{b.total_copies}</TableCell><TableCell>{b.shelf_location || '—'}</TableCell></TableRow>)}</TableBody></Table></div>
+              <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Author</TableHead><TableHead>ISBN</TableHead><TableHead>Category</TableHead><TableHead>Available</TableHead><TableHead>Total</TableHead><TableHead>Shelf</TableHead><TableHead className="w-[80px]">Actions</TableHead></TableRow></TableHeader>
+              <TableBody>{books.map(b => <TableRow key={b.id}><TableCell className="font-medium">{b.title}</TableCell><TableCell>{b.author || '—'}</TableCell><TableCell className="font-mono text-xs">{b.isbn || '—'}</TableCell><TableCell>{b.category || '—'}</TableCell><TableCell className={b.available_copies === 0 ? 'text-destructive font-medium' : ''}>{b.available_copies}</TableCell><TableCell>{b.total_copies}</TableCell><TableCell>{b.shelf_location || '—'}</TableCell>
+              <TableCell><RoleSection roles={['admin']}><div className="flex gap-1"><EditDialog title="Edit Book">{({ onClose }) => <EditBookForm item={b} onClose={onClose} />}</EditDialog><DeleteButton onDelete={() => handleDeleteBook(b.id)} itemName={b.title} /></div></RoleSection></TableCell></TableRow>)}</TableBody></Table></div>
             )}</CardContent></Card>
           </TabsContent>
           <TabsContent value="issues">
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0"><CardTitle className="text-base">Book Issues</CardTitle><div className="flex gap-2"><ExportButton onClick={() => exportToCSV(issues.map(i => ({ book: i.library_books?.title || '', student: i.students?.full_name || '', issued: i.issue_date, due: i.due_date || '', returned: i.return_date || '', fine: i.fine, status: i.status })), 'book_issues')} /><RoleSection roles={['admin']}><AddDialog title="Issue Book" triggerLabel="Issue Book">{({ onClose }) => <AddIssueForm onClose={onClose} />}</AddDialog></RoleSection></div></CardHeader>
             <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : issues.length === 0 ? <p className="text-sm text-muted-foreground">No issues found.</p> : (
-              <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Book</TableHead><TableHead>Student</TableHead><TableHead>Issued</TableHead><TableHead>Due</TableHead><TableHead>Returned</TableHead><TableHead>Fine</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
-              <TableBody>{issues.map(i => <TableRow key={i.id}><TableCell className="font-medium">{i.library_books?.title || '—'}</TableCell><TableCell>{i.students?.full_name || '—'}</TableCell><TableCell className="font-mono text-xs">{i.issue_date}</TableCell><TableCell className="font-mono text-xs">{i.due_date || '—'}</TableCell><TableCell className="font-mono text-xs">{i.return_date || '—'}</TableCell><TableCell className="font-mono">{i.fine > 0 ? `$${i.fine}` : '—'}</TableCell><TableCell><Badge variant="outline" className="capitalize">{i.status}</Badge></TableCell></TableRow>)}</TableBody></Table></div>
+              <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Book</TableHead><TableHead>Student</TableHead><TableHead>Issued</TableHead><TableHead>Due</TableHead><TableHead>Returned</TableHead><TableHead>Fine</TableHead><TableHead>Status</TableHead><TableHead className="w-[60px]">Actions</TableHead></TableRow></TableHeader>
+              <TableBody>{issues.map(i => <TableRow key={i.id}><TableCell className="font-medium">{i.library_books?.title || '—'}</TableCell><TableCell>{i.students?.full_name || '—'}</TableCell><TableCell className="font-mono text-xs">{i.issue_date}</TableCell><TableCell className="font-mono text-xs">{i.due_date || '—'}</TableCell><TableCell className="font-mono text-xs">{i.return_date || '—'}</TableCell><TableCell className="font-mono">{i.fine > 0 ? `$${i.fine}` : '—'}</TableCell><TableCell><Badge variant="outline" className="capitalize">{i.status}</Badge></TableCell>
+              <TableCell><RoleSection roles={['admin']}><DeleteButton onDelete={() => handleDeleteIssue(i.id)} itemName="issue" /></RoleSection></TableCell></TableRow>)}</TableBody></Table></div>
             )}</CardContent></Card>
           </TabsContent>
         </Tabs>
