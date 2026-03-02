@@ -1,6 +1,8 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import EditDialog from '@/components/common/EditDialog';
+import DeleteButton from '@/components/common/DeleteButton';
 import ExportButton from '@/components/common/ExportButton';
 import { ClipboardCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -41,6 +43,11 @@ const AttendancePage = () => {
   const absentCount = records.filter(r => r.status === 'absent').length;
   const rate = records.length > 0 ? ((presentCount / records.length) * 100).toFixed(1) : '0';
 
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from('attendance').delete().eq('id', id);
+    if (error) toast.error(error.message); else { toast.success('Record deleted'); fetchRecords(); }
+  };
+
   const AddForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ student_id: '', class_id: '', date: new Date().toISOString().split('T')[0], status: 'present', remarks: '' });
     const [saving, setSaving] = useState(false);
@@ -50,24 +57,35 @@ const AttendancePage = () => {
       if (error) toast.error(error.message); else { toast.success('Attendance recorded'); onClose(); fetchRecords(); }
       setSaving(false);
     };
-    return (
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="space-y-1"><Label>Student *</Label>
-          <Select value={form.student_id} onValueChange={v => setForm(f => ({ ...f, student_id: v }))}><SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger><SelectContent>{students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}</SelectContent></Select>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1"><Label>Class</Label>
-            <Select value={form.class_id} onValueChange={v => setForm(f => ({ ...f, class_id: v }))}><SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger><SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name} {c.section}</SelectItem>)}</SelectContent></Select>
-          </div>
-          <div className="space-y-1"><Label>Date *</Label><Input type="date" required value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
-          <div className="space-y-1"><Label>Status *</Label>
-            <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="present">Present</SelectItem><SelectItem value="absent">Absent</SelectItem><SelectItem value="late">Late</SelectItem><SelectItem value="half-day">Half Day</SelectItem></SelectContent></Select>
-          </div>
-          <div className="space-y-1"><Label>Remarks</Label><Input value={form.remarks} onChange={e => setForm(f => ({ ...f, remarks: e.target.value }))} /></div>
-        </div>
-        <Button type="submit" className="w-full" disabled={saving || !form.student_id}>{saving ? 'Saving...' : 'Record Attendance'}</Button>
-      </form>
-    );
+    return (<form onSubmit={handleSubmit} className="space-y-3">
+      <div className="space-y-1"><Label>Student *</Label><Select value={form.student_id} onValueChange={v => setForm(f => ({ ...f, student_id: v }))}><SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger><SelectContent>{students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}</SelectContent></Select></div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1"><Label>Class</Label><Select value={form.class_id} onValueChange={v => setForm(f => ({ ...f, class_id: v }))}><SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger><SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name} {c.section}</SelectItem>)}</SelectContent></Select></div>
+        <div className="space-y-1"><Label>Date *</Label><Input type="date" required value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+        <div className="space-y-1"><Label>Status *</Label><Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="present">Present</SelectItem><SelectItem value="absent">Absent</SelectItem><SelectItem value="late">Late</SelectItem><SelectItem value="half-day">Half Day</SelectItem></SelectContent></Select></div>
+        <div className="space-y-1"><Label>Remarks</Label><Input value={form.remarks} onChange={e => setForm(f => ({ ...f, remarks: e.target.value }))} /></div>
+      </div>
+      <Button type="submit" className="w-full" disabled={saving || !form.student_id}>{saving ? 'Saving...' : 'Record Attendance'}</Button>
+    </form>);
+  };
+
+  const EditForm = ({ item, onClose }: { item: any; onClose: () => void }) => {
+    const [form, setForm] = useState({ status: item.status, remarks: item.remarks || '', date: item.date });
+    const [saving, setSaving] = useState(false);
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault(); setSaving(true);
+      const { error } = await supabase.from('attendance').update({ status: form.status, remarks: form.remarks || null, date: form.date }).eq('id', item.id);
+      if (error) toast.error(error.message); else { toast.success('Updated'); onClose(); fetchRecords(); }
+      setSaving(false);
+    };
+    return (<form onSubmit={handleSubmit} className="space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1"><Label>Status</Label><Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="present">Present</SelectItem><SelectItem value="absent">Absent</SelectItem><SelectItem value="late">Late</SelectItem><SelectItem value="half-day">Half Day</SelectItem></SelectContent></Select></div>
+        <div className="space-y-1"><Label>Date</Label><Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+      </div>
+      <div className="space-y-1"><Label>Remarks</Label><Input value={form.remarks} onChange={e => setForm(f => ({ ...f, remarks: e.target.value }))} /></div>
+      <Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</Button>
+    </form>);
   };
 
   return (
@@ -93,8 +111,9 @@ const AttendancePage = () => {
           <CardContent>
             {loading ? <p className="text-sm text-muted-foreground">Loading...</p> : records.length === 0 ? <p className="text-sm text-muted-foreground">No attendance records found.</p> : (
               <div className="overflow-x-auto">
-                <Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Student</TableHead><TableHead>Class</TableHead><TableHead>Status</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader>
-                <TableBody>{records.map(r => (<TableRow key={r.id}><TableCell className="font-mono text-xs">{r.date}</TableCell><TableCell className="font-medium">{r.students?.full_name || '—'}</TableCell><TableCell>{r.classes ? `${r.classes.name} ${r.classes.section}` : '—'}</TableCell><TableCell><Badge variant="outline" className={statusColor[r.status] || ''}>{r.status}</Badge></TableCell><TableCell className="text-sm text-muted-foreground">{r.remarks || '—'}</TableCell></TableRow>))}</TableBody></Table>
+                <Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Student</TableHead><TableHead>Class</TableHead><TableHead>Status</TableHead><TableHead>Remarks</TableHead><TableHead className="w-[80px]">Actions</TableHead></TableRow></TableHeader>
+                <TableBody>{records.map(r => (<TableRow key={r.id}><TableCell className="font-mono text-xs">{r.date}</TableCell><TableCell className="font-medium">{r.students?.full_name || '—'}</TableCell><TableCell>{r.classes ? `${r.classes.name} ${r.classes.section}` : '—'}</TableCell><TableCell><Badge variant="outline" className={statusColor[r.status] || ''}>{r.status}</Badge></TableCell><TableCell className="text-sm text-muted-foreground">{r.remarks || '—'}</TableCell>
+                <TableCell><div className="flex gap-1"><EditDialog title="Edit Attendance">{({ onClose }) => <EditForm item={r} onClose={onClose} />}</EditDialog><DeleteButton onDelete={() => handleDelete(r.id)} itemName="record" /></div></TableCell></TableRow>))}</TableBody></Table>
               </div>
             )}
           </CardContent>

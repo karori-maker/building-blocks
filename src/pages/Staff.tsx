@@ -1,6 +1,8 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import EditDialog from '@/components/common/EditDialog';
+import DeleteButton from '@/components/common/DeleteButton';
 import ExportButton from '@/components/common/ExportButton';
 import { UserCog } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -12,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/export';
 
@@ -24,24 +27,16 @@ const StaffPage = () => {
 
   const totalActive = staff.filter(s => s.status === 'active').length;
   const departments = [...new Set(staff.map(s => s.department).filter(Boolean))];
-
-  const groupedByDept = departments.map(d => ({
-    department: d,
-    members: staff.filter(s => s.department === d),
-  }));
+  const groupedByDept = departments.map(d => ({ department: d, members: staff.filter(s => s.department === d) }));
   const noDept = staff.filter(s => !s.department);
 
   const exportStaff = (list: any[], label: string) => {
-    exportToCSV(list.map(s => ({
-      employee_id: s.employee_id,
-      full_name: s.full_name,
-      designation: s.designation || '',
-      department: s.department || '',
-      qualification: s.qualification || '',
-      email: s.email || '',
-      phone: s.phone || '',
-      status: s.status || '',
-    })), `staff_${label}`);
+    exportToCSV(list.map(s => ({ employee_id: s.employee_id, full_name: s.full_name, designation: s.designation || '', department: s.department || '', qualification: s.qualification || '', email: s.email || '', phone: s.phone || '', status: s.status || '' })), `staff_${label}`);
+  };
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from('staff').delete().eq('id', id);
+    if (error) toast.error(error.message); else { toast.success('Staff deleted'); fetchData(); }
   };
 
   const AddForm = ({ onClose }: { onClose: () => void }) => {
@@ -53,25 +48,42 @@ const StaffPage = () => {
       if (error) toast.error(error.message); else { toast.success('Staff added'); onClose(); fetchData(); }
       setSaving(false);
     };
-    return (
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1"><Label>Employee ID *</Label><Input required value={form.employee_id} onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))} /></div>
-          <div className="space-y-1"><Label>Full Name *</Label><Input required value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} /></div>
-          <div className="space-y-1"><Label>Designation</Label><Input value={form.designation} onChange={e => setForm(f => ({ ...f, designation: e.target.value }))} /></div>
-          <div className="space-y-1"><Label>Department</Label><Input value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))} /></div>
-          <div className="space-y-1"><Label>Qualification</Label><Input value={form.qualification} onChange={e => setForm(f => ({ ...f, qualification: e.target.value }))} /></div>
-          <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
-          <div className="space-y-1"><Label>Salary</Label><Input type="number" value={form.salary} onChange={e => setForm(f => ({ ...f, salary: e.target.value }))} /></div>
-        </div>
-        <Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Add Staff'}</Button>
-      </form>
-    );
+    return (<form onSubmit={handleSubmit} className="space-y-3"><div className="grid grid-cols-2 gap-3">
+      <div className="space-y-1"><Label>Employee ID *</Label><Input required value={form.employee_id} onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))} /></div>
+      <div className="space-y-1"><Label>Full Name *</Label><Input required value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} /></div>
+      <div className="space-y-1"><Label>Designation</Label><Input value={form.designation} onChange={e => setForm(f => ({ ...f, designation: e.target.value }))} /></div>
+      <div className="space-y-1"><Label>Department</Label><Input value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))} /></div>
+      <div className="space-y-1"><Label>Qualification</Label><Input value={form.qualification} onChange={e => setForm(f => ({ ...f, qualification: e.target.value }))} /></div>
+      <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+      <div className="space-y-1"><Label>Salary</Label><Input type="number" value={form.salary} onChange={e => setForm(f => ({ ...f, salary: e.target.value }))} /></div>
+    </div><Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Add Staff'}</Button></form>);
+  };
+
+  const EditForm = ({ item, onClose }: { item: any; onClose: () => void }) => {
+    const [form, setForm] = useState({ employee_id: item.employee_id, full_name: item.full_name, designation: item.designation || '', department: item.department || '', qualification: item.qualification || '', email: item.email || '', salary: item.salary?.toString() || '', status: item.status || 'active' });
+    const [saving, setSaving] = useState(false);
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault(); setSaving(true);
+      const { error } = await supabase.from('staff').update({ ...form, salary: form.salary ? Number(form.salary) : null }).eq('id', item.id);
+      if (error) toast.error(error.message); else { toast.success('Staff updated'); onClose(); fetchData(); }
+      setSaving(false);
+    };
+    return (<form onSubmit={handleSubmit} className="space-y-3"><div className="grid grid-cols-2 gap-3">
+      <div className="space-y-1"><Label>Employee ID *</Label><Input required value={form.employee_id} onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))} /></div>
+      <div className="space-y-1"><Label>Full Name *</Label><Input required value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} /></div>
+      <div className="space-y-1"><Label>Designation</Label><Input value={form.designation} onChange={e => setForm(f => ({ ...f, designation: e.target.value }))} /></div>
+      <div className="space-y-1"><Label>Department</Label><Input value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))} /></div>
+      <div className="space-y-1"><Label>Qualification</Label><Input value={form.qualification} onChange={e => setForm(f => ({ ...f, qualification: e.target.value }))} /></div>
+      <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+      <div className="space-y-1"><Label>Salary</Label><Input type="number" value={form.salary} onChange={e => setForm(f => ({ ...f, salary: e.target.value }))} /></div>
+      <div className="space-y-1"><Label>Status</Label><Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select></div>
+    </div><Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</Button></form>);
   };
 
   const StaffTable = ({ list }: { list: any[] }) => (
-    <Table><TableHeader><TableRow><TableHead>Employee ID</TableHead><TableHead>Name</TableHead><TableHead>Designation</TableHead><TableHead>Department</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
-    <TableBody>{list.map(s => (<TableRow key={s.id}><TableCell className="font-mono text-xs">{s.employee_id}</TableCell><TableCell className="font-medium">{s.full_name}</TableCell><TableCell>{s.designation || '—'}</TableCell><TableCell>{s.department || '—'}</TableCell><TableCell><Badge variant="outline" className="capitalize">{s.status}</Badge></TableCell></TableRow>))}</TableBody></Table>
+    <Table><TableHeader><TableRow><TableHead>Employee ID</TableHead><TableHead>Name</TableHead><TableHead>Designation</TableHead><TableHead>Department</TableHead><TableHead>Status</TableHead><TableHead className="w-[80px]">Actions</TableHead></TableRow></TableHeader>
+    <TableBody>{list.map(s => (<TableRow key={s.id}><TableCell className="font-mono text-xs">{s.employee_id}</TableCell><TableCell className="font-medium">{s.full_name}</TableCell><TableCell>{s.designation || '—'}</TableCell><TableCell>{s.department || '—'}</TableCell><TableCell><Badge variant="outline" className="capitalize">{s.status}</Badge></TableCell>
+    <TableCell><div className="flex gap-1"><EditDialog title="Edit Staff">{({ onClose }) => <EditForm item={s} onClose={onClose} />}</EditDialog><DeleteButton onDelete={() => handleDelete(s.id)} itemName={s.full_name} /></div></TableCell></TableRow>))}</TableBody></Table>
   );
 
   return (
