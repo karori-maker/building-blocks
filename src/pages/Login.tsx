@@ -9,12 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
 
-const demoAccounts = [
-  { role: 'Admin', email: 'admin@school.com', password: 'admin123' },
-  { role: 'Teacher', email: 'teacher@school.com', password: 'teacher123' },
-  { role: 'Student', email: 'student@school.com', password: 'student123' },
-  { role: 'Parent', email: 'parent@school.com', password: 'parent123' },
-];
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -50,10 +44,6 @@ const Login = () => {
     setShowForgot(false);
   };
 
-  const fillDemo = (account: typeof demoAccounts[0]) => {
-    setEmail(account.email);
-    setPassword(account.password);
-  };
 
   if (showForgot) {
     return (
@@ -97,10 +87,6 @@ const Login = () => {
               <Button type="button" variant="link" className="w-full text-sm" onClick={() => setShowForgot(true)}>Forgot your password?</Button>
             </form>
           </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-sm font-medium">Demo Accounts</CardTitle></CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2">{demoAccounts.map(a => (<Button key={a.role} variant="outline" size="sm" onClick={() => fillDemo(a)}>{a.role}</Button>))}</CardContent>
         </Card>
       </div>
     </div>

@@ -6,6 +6,7 @@ import ReportCard, { getGrade } from '@/components/common/ReportCard';
 import { BookOpen } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,6 +19,7 @@ import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/export';
 
 const AcademicsPage = () => {
+  const { user, role } = useAuth();
   const [exams, setExams] = useState<any[]>([]);
   const [grades, setGrades] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
@@ -37,10 +39,21 @@ const AcademicsPage = () => {
       supabase.from('grades').select('*, students(full_name, student_id, class_id), subjects(name), exams(name, exam_type, max_marks)').order('created_at', { ascending: false }).limit(1000),
       supabase.from('subjects').select('*, classes(name, section)').order('name'),
       supabase.from('classes').select('*').order('name'),
-      supabase.from('students').select('id, full_name, student_id, class_id').order('full_name'),
+      supabase.from('students').select('id, full_name, student_id, class_id, user_id').order('full_name'),
       supabase.from('school_settings').select('*').limit(1).single(),
     ]).then(([e, g, s, c, st, ss]) => {
-      setExams(e.data || []); setGrades(g.data || []); setSubjects(s.data || []); setClasses(c.data || []); setStudents(st.data || []);
+      setExams(e.data || []);
+      // For teachers: RLS already filters grades to their subjects only
+      // For students: RLS already filters to their own grades
+      setGrades(g.data || []);
+      // For teachers: filter subjects to their own
+      let subjectList = s.data || [];
+      if (role === 'teacher' && user) {
+        subjectList = subjectList.filter((sub: any) => sub.teacher_id === user.id);
+      }
+      setSubjects(subjectList);
+      setClasses(c.data || []);
+      setStudents(st.data || []);
       setSettings(ss.data);
       setLoading(false);
     });
@@ -291,7 +304,7 @@ const AcademicsPage = () => {
         </Tabs>
       </RoleSection>
       <RoleSection roles={['student', 'parent']}>
-        <Card><CardHeader><CardTitle className="text-base">My Grades</CardTitle></CardHeader><CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : grades.length === 0 ? <p className="text-sm text-muted-foreground">No grades available yet.</p> : (<div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Subject</TableHead><TableHead>Exam</TableHead><TableHead>Marks</TableHead><TableHead>Grade</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader><TableBody>{grades.map(g => <TableRow key={g.id}><TableCell>{g.subjects?.name || '—'}</TableCell><TableCell>{g.exams?.name || '—'}</TableCell><TableCell>{g.marks_obtained ?? '—'}</TableCell><TableCell className="font-bold">{g.grade || '—'}</TableCell><TableCell className="text-sm text-muted-foreground">{g.remarks || '—'}</TableCell></TableRow>)}</TableBody></Table></div>)}</CardContent></Card>
+        <Card><CardHeader><CardTitle className="text-base">My Grades</CardTitle></CardHeader><CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : grades.length === 0 ? <p className="text-sm text-muted-foreground">No grades available yet. Your scores will appear here once entered by your teacher.</p> : (<div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Subject</TableHead><TableHead>Exam</TableHead><TableHead>Marks</TableHead><TableHead>Grade</TableHead><TableHead>Remarks</TableHead></TableRow></TableHeader><TableBody>{grades.map(g => <TableRow key={g.id}><TableCell>{g.subjects?.name || '—'}</TableCell><TableCell>{g.exams?.name || '—'}</TableCell><TableCell>{g.marks_obtained ?? '—'}</TableCell><TableCell className="font-bold">{g.grade || '—'}</TableCell><TableCell className="text-sm text-muted-foreground">{g.remarks || '—'}</TableCell></TableRow>)}</TableBody></Table></div>)}</CardContent></Card>
         <Card><CardHeader><CardTitle className="text-base">Upcoming Exams</CardTitle></CardHeader><CardContent>{exams.length === 0 ? <p className="text-sm text-muted-foreground">No upcoming exams.</p> : (<div className="space-y-3">{exams.slice(0, 5).map(e => (<div key={e.id} className="flex justify-between items-center border-b pb-2 last:border-0"><div><p className="font-medium">{e.name}</p><p className="text-xs text-muted-foreground">{e.subjects?.name} — {e.classes ? `${e.classes.name} ${e.classes.section}` : ''}</p></div><div className="text-right"><p className="font-mono text-xs">{e.date || 'TBD'}</p><Badge variant="outline" className="capitalize">{e.exam_type}</Badge></div></div>))}</div>)}</CardContent></Card>
       </RoleSection>
     </ModulePage>

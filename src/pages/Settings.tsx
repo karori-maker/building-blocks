@@ -111,7 +111,7 @@ const SettingsPage = () => {
         </TabsList>
 
         <TabsContent value="school">
-          <RoleSection roles={['admin']}>
+          <RoleSection roles={['admin', 'sub_admin']}>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-base">School Information</CardTitle>

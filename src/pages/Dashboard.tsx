@@ -8,7 +8,9 @@ const Dashboard = () => {
   const { role } = useAuth();
 
   switch (role) {
-    case 'admin': return <AdminDashboard />;
+    case 'admin':
+    case 'sub_admin':
+      return <AdminDashboard />;
     case 'teacher': return <TeacherDashboard />;
     case 'student': return <StudentDashboard />;
     case 'parent': return <ParentDashboard />;
