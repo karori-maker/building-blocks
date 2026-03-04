@@ -11,23 +11,24 @@ import { Button } from '@/components/ui/button';
 type NavItem = { label: string; icon: React.ElementType; path: string; roles: string[] };
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/', roles: ['admin', 'teacher', 'student', 'parent'] },
-  { label: 'Students', icon: Users, path: '/students', roles: ['admin', 'teacher'] },
-  { label: 'Staff', icon: UserCog, path: '/staff', roles: ['admin'] },
-  { label: 'Attendance', icon: ClipboardCheck, path: '/attendance', roles: ['admin', 'teacher'] },
-  { label: 'Academics', icon: BookOpen, path: '/academics', roles: ['admin', 'teacher', 'student', 'parent'] },
-  { label: 'Timetable', icon: Clock, path: '/timetable', roles: ['admin', 'teacher', 'student', 'parent'] },
-  { label: 'Assignments', icon: FileText, path: '/assignments', roles: ['admin', 'teacher', 'student'] },
-  { label: 'Fees', icon: CreditCard, path: '/fees', roles: ['admin', 'parent', 'student'] },
-  { label: 'Finance', icon: DollarSign, path: '/finance', roles: ['admin'] },
-  { label: 'Library', icon: Library, path: '/library', roles: ['admin', 'teacher', 'student'] },
-  { label: 'Transport', icon: Bus, path: '/transport', roles: ['admin', 'parent'] },
-  { label: 'Inventory', icon: Package, path: '/inventory', roles: ['admin'] },
-  { label: 'Discipline', icon: Shield, path: '/discipline', roles: ['admin', 'teacher'] },
-  { label: 'Communication', icon: MessageSquare, path: '/communication', roles: ['admin', 'teacher', 'student', 'parent'] },
-  { label: 'Events', icon: CalendarDays, path: '/events', roles: ['admin', 'teacher', 'student', 'parent'] },
-  { label: 'Materials', icon: PackageCheck, path: '/materials', roles: ['admin', 'teacher', 'student', 'parent'] },
-  { label: 'Settings', icon: Settings, path: '/settings', roles: ['admin'] },
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/', roles: ['admin', 'sub_admin', 'teacher', 'student', 'parent'] },
+  { label: 'Schools', icon: GraduationCap, path: '/schools', roles: ['admin'] },
+  { label: 'Students', icon: Users, path: '/students', roles: ['admin', 'sub_admin', 'teacher'] },
+  { label: 'Staff', icon: UserCog, path: '/staff', roles: ['admin', 'sub_admin'] },
+  { label: 'Attendance', icon: ClipboardCheck, path: '/attendance', roles: ['admin', 'sub_admin', 'teacher'] },
+  { label: 'Academics', icon: BookOpen, path: '/academics', roles: ['admin', 'sub_admin', 'teacher', 'student', 'parent'] },
+  { label: 'Timetable', icon: Clock, path: '/timetable', roles: ['admin', 'sub_admin', 'teacher', 'student', 'parent'] },
+  { label: 'Assignments', icon: FileText, path: '/assignments', roles: ['admin', 'sub_admin', 'teacher', 'student'] },
+  { label: 'Fees', icon: CreditCard, path: '/fees', roles: ['admin', 'sub_admin', 'parent', 'student'] },
+  { label: 'Finance', icon: DollarSign, path: '/finance', roles: ['admin', 'sub_admin'] },
+  { label: 'Library', icon: Library, path: '/library', roles: ['admin', 'sub_admin', 'teacher', 'student'] },
+  { label: 'Transport', icon: Bus, path: '/transport', roles: ['admin', 'sub_admin', 'parent'] },
+  { label: 'Inventory', icon: Package, path: '/inventory', roles: ['admin', 'sub_admin'] },
+  { label: 'Discipline', icon: Shield, path: '/discipline', roles: ['admin', 'sub_admin', 'teacher'] },
+  { label: 'Communication', icon: MessageSquare, path: '/communication', roles: ['admin', 'sub_admin', 'teacher', 'student', 'parent'] },
+  { label: 'Events', icon: CalendarDays, path: '/events', roles: ['admin', 'sub_admin', 'teacher', 'student', 'parent'] },
+  { label: 'Materials', icon: PackageCheck, path: '/materials', roles: ['admin', 'sub_admin', 'teacher', 'student', 'parent'] },
+  { label: 'Settings', icon: Settings, path: '/settings', roles: ['admin', 'sub_admin'] },
 ];
 
 const AppSidebar = () => {
@@ -35,6 +36,7 @@ const AppSidebar = () => {
   const navigate = useNavigate();
 
   const filtered = navItems.filter(item => role && item.roles.includes(role));
+  const schoolLabel = role === 'sub_admin' ? 'Sub-Admin' : role;
 
   const handleSignOut = async () => {
     await signOut();
@@ -49,7 +51,7 @@ const AppSidebar = () => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold truncate">Westfield Academy</p>
-          <p className="text-xs text-muted-foreground capitalize">{role}</p>
+          <p className="text-xs text-muted-foreground capitalize">{schoolLabel}</p>
         </div>
       </div>
 

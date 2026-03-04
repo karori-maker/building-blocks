@@ -7,30 +7,31 @@ import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
 const iconMap: Record<string, React.ElementType> = {
-  Dashboard: LayoutDashboard, Students: Users, Staff: UserCog, Attendance: ClipboardCheck,
+  Dashboard: LayoutDashboard, Schools: GraduationCap, Students: Users, Staff: UserCog, Attendance: ClipboardCheck,
   Academics: BookOpen, Timetable: Clock, Assignments: FileText, Fees: CreditCard,
   Finance: DollarSign, Library: Library, Transport: Bus, Inventory: Package,
   Discipline: Shield, Communication: MessageSquare, Events: CalendarDays, Materials: PackageCheck, Settings: Settings,
 };
 
 const navItems = [
-  { label: 'Dashboard', path: '/', roles: ['admin','teacher','student','parent'] },
-  { label: 'Students', path: '/students', roles: ['admin','teacher'] },
-  { label: 'Staff', path: '/staff', roles: ['admin'] },
-  { label: 'Attendance', path: '/attendance', roles: ['admin','teacher'] },
-  { label: 'Academics', path: '/academics', roles: ['admin','teacher','student','parent'] },
-  { label: 'Timetable', path: '/timetable', roles: ['admin','teacher','student','parent'] },
-  { label: 'Assignments', path: '/assignments', roles: ['admin','teacher','student'] },
-  { label: 'Fees', path: '/fees', roles: ['admin','parent','student'] },
-  { label: 'Finance', path: '/finance', roles: ['admin'] },
-  { label: 'Library', path: '/library', roles: ['admin','teacher','student'] },
-  { label: 'Transport', path: '/transport', roles: ['admin','parent'] },
-  { label: 'Inventory', path: '/inventory', roles: ['admin'] },
-  { label: 'Discipline', path: '/discipline', roles: ['admin','teacher'] },
-  { label: 'Communication', path: '/communication', roles: ['admin','teacher','student','parent'] },
-  { label: 'Events', path: '/events', roles: ['admin','teacher','student','parent'] },
-  { label: 'Materials', path: '/materials', roles: ['admin','teacher','student','parent'] },
-  { label: 'Settings', path: '/settings', roles: ['admin'] },
+  { label: 'Dashboard', path: '/', roles: ['admin','sub_admin','teacher','student','parent'] },
+  { label: 'Schools', path: '/schools', roles: ['admin'] },
+  { label: 'Students', path: '/students', roles: ['admin','sub_admin','teacher'] },
+  { label: 'Staff', path: '/staff', roles: ['admin','sub_admin'] },
+  { label: 'Attendance', path: '/attendance', roles: ['admin','sub_admin','teacher'] },
+  { label: 'Academics', path: '/academics', roles: ['admin','sub_admin','teacher','student','parent'] },
+  { label: 'Timetable', path: '/timetable', roles: ['admin','sub_admin','teacher','student','parent'] },
+  { label: 'Assignments', path: '/assignments', roles: ['admin','sub_admin','teacher','student'] },
+  { label: 'Fees', path: '/fees', roles: ['admin','sub_admin','parent','student'] },
+  { label: 'Finance', path: '/finance', roles: ['admin','sub_admin'] },
+  { label: 'Library', path: '/library', roles: ['admin','sub_admin','teacher','student'] },
+  { label: 'Transport', path: '/transport', roles: ['admin','sub_admin','parent'] },
+  { label: 'Inventory', path: '/inventory', roles: ['admin','sub_admin'] },
+  { label: 'Discipline', path: '/discipline', roles: ['admin','sub_admin','teacher'] },
+  { label: 'Communication', path: '/communication', roles: ['admin','sub_admin','teacher','student','parent'] },
+  { label: 'Events', path: '/events', roles: ['admin','sub_admin','teacher','student','parent'] },
+  { label: 'Materials', path: '/materials', roles: ['admin','sub_admin','teacher','student','parent'] },
+  { label: 'Settings', path: '/settings', roles: ['admin','sub_admin'] },
 ];
 
 const MobileNav = () => {
