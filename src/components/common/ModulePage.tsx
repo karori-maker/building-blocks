@@ -11,8 +11,8 @@ interface ModulePageProps {
 const ModulePage = ({ title, description, icon: Icon, children }: ModulePageProps) => (
   <div className="space-y-6">
     <div className="flex items-center gap-3">
-      <div className="p-2 rounded-lg bg-primary/10">
-        <Icon className="w-6 h-6 text-primary" />
+      <div className="p-2.5 rounded-xl gradient-primary shadow-sm">
+        <Icon className="w-6 h-6 text-white" />
       </div>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
@@ -20,7 +20,7 @@ const ModulePage = ({ title, description, icon: Icon, children }: ModulePageProp
       </div>
     </div>
     {children || (
-      <Card>
+      <Card className="shadow-sm border-border/50">
         <CardHeader><CardTitle className="text-base">Coming Soon</CardTitle></CardHeader>
         <CardContent><p className="text-sm text-muted-foreground">This module is under development. Data will appear here once configured.</p></CardContent>
       </Card>

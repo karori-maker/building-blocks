@@ -27,6 +27,8 @@ interface ReportCardProps {
   position?: string;
   classTeacherRemarks?: string;
   principalName?: string;
+  headmasterName?: string;
+  schoolLogoUrl?: string;
   date?: string;
 }
 
@@ -53,7 +55,7 @@ export const getGrade = (percentage: number): string => {
 const ReportCard = ({
   schoolName, studentName, regNumber, className, academicYear, term,
   conduct, conductMax, grades, percentage, position,
-  classTeacherRemarks, principalName, date,
+  classTeacherRemarks, principalName, headmasterName, schoolLogoUrl, date,
 }: ReportCardProps) => {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -70,9 +72,11 @@ const ReportCard = ({
         body { font-family: 'Times New Roman', serif; font-size: 12px; color: #000; }
         .report-card { max-width: 210mm; margin: 0 auto; padding: 20px; }
         .header { text-align: center; margin-bottom: 15px; }
+        .header img.logo { width: 80px; height: 80px; object-fit: contain; margin: 0 auto 8px; display: block; }
         .header h2 { font-size: 14px; text-transform: uppercase; margin-bottom: 3px; }
         .header h1 { font-size: 18px; text-transform: uppercase; margin-bottom: 3px; }
         .header h3 { font-size: 16px; text-transform: uppercase; margin-bottom: 5px; border-bottom: 2px solid #000; display: inline-block; padding-bottom: 3px; }
+        .header .headmaster { font-size: 11px; margin-top: 3px; font-style: italic; }
         .info { margin-bottom: 10px; }
         .info p { margin: 2px 0; font-size: 12px; }
         .info strong { font-weight: bold; }
@@ -80,12 +84,10 @@ const ReportCard = ({
         th, td { border: 1px solid #000; padding: 4px 6px; text-align: center; font-size: 11px; }
         th { background: #e8e8e8; font-weight: bold; }
         td.left { text-align: left; }
-        .grade-scale { margin-top: 10px; }
         .grade-scale th { font-size: 10px; }
         .grade-scale td { font-size: 10px; }
         .footer { margin-top: 20px; }
         .footer p { margin: 8px 0; font-size: 11px; }
-        .footer .line { border-bottom: 1px solid #000; display: inline-block; width: 200px; }
         .total-row { font-weight: bold; background: #f0f0f0; }
         .percentage { font-size: 14px; font-weight: bold; margin: 8px 0; }
         .position { font-size: 13px; margin-bottom: 10px; }
@@ -104,17 +106,23 @@ const ReportCard = ({
   return (
     <div>
       <div className="flex justify-end mb-3 print:hidden">
-        <Button onClick={handlePrint} size="sm" className="gap-1">
+        <Button onClick={handlePrint} size="sm" className="gap-1 gradient-primary text-white border-0">
           <Printer className="w-4 h-4" /> Print Report
         </Button>
       </div>
       <div ref={ref} className="bg-white text-black p-6 rounded-lg border max-w-3xl mx-auto" style={{ fontFamily: "'Times New Roman', serif" }}>
         <div className="report-card">
-          {/* Header */}
+          {/* Header with Logo */}
           <div className="header" style={{ textAlign: 'center', marginBottom: '15px' }}>
+            {schoolLogoUrl && (
+              <img src={schoolLogoUrl} alt="School Logo" className="logo" style={{ width: '80px', height: '80px', objectFit: 'contain', margin: '0 auto 8px', display: 'block' }} />
+            )}
             <h2 style={{ fontSize: '14px', textTransform: 'uppercase', marginBottom: '3px' }}>REPUBLIC OF RWANDA</h2>
             <h2 style={{ fontSize: '14px', textTransform: 'uppercase', marginBottom: '3px' }}>MINISTRY OF EDUCATION</h2>
             <h1 style={{ fontSize: '18px', textTransform: 'uppercase', marginBottom: '8px' }}>{schoolName}</h1>
+            {headmasterName && (
+              <p style={{ fontSize: '11px', fontStyle: 'italic', marginBottom: '5px' }}>Headmaster: {headmasterName}</p>
+            )}
             <h3 style={{ fontSize: '16px', textTransform: 'uppercase', borderBottom: '2px solid #000', display: 'inline-block', paddingBottom: '3px' }}>PROGRESSIVE REPORT</h3>
           </div>
 
@@ -179,11 +187,9 @@ const ReportCard = ({
             </tbody>
           </table>
 
-          {/* Percentage & Position */}
           <p className="percentage" style={{ fontSize: '14px', fontWeight: 'bold', margin: '8px 0' }}>PERCENTAGE: {percentage.toFixed(2)} %</p>
           {position && <p className="position" style={{ fontSize: '13px', marginBottom: '10px' }}>POSITION: {position}</p>}
 
-          {/* Grading Scale */}
           <table className="grade-scale" style={{ width: '60%', borderCollapse: 'collapse', marginBottom: '15px' }}>
             <thead>
               <tr>
@@ -205,12 +211,11 @@ const ReportCard = ({
             </tbody>
           </table>
 
-          {/* Footer */}
           <div className="footer" style={{ marginTop: '20px' }}>
             <p style={{ margin: '8px 0', fontSize: '11px' }}>Class Teacher's Remarks and Signature: {classTeacherRemarks || '___________________________'}</p>
             <p style={{ margin: '8px 0', fontSize: '11px' }}>Parent's Signature: ___________________________</p>
-            {principalName && <p style={{ margin: '8px 0', fontSize: '11px', fontWeight: 'bold' }}>{principalName}</p>}
-            <p style={{ margin: '8px 0', fontSize: '11px' }}>Principal</p>
+            {(headmasterName || principalName) && <p style={{ margin: '8px 0', fontSize: '11px', fontWeight: 'bold' }}>{headmasterName || principalName}</p>}
+            <p style={{ margin: '8px 0', fontSize: '11px' }}>Headmaster / Principal</p>
             <p style={{ margin: '8px 0', fontSize: '11px' }}>{date || new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
             <p style={{ margin: '8px 0', fontSize: '11px' }}>Stamp and Signature.</p>
           </div>

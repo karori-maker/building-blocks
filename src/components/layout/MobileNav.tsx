@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 import { useNavigate, NavLink } from 'react-router-dom';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -36,15 +37,23 @@ const navItems = [
 
 const MobileNav = () => {
   const { role, profile, signOut } = useAuth();
+  const { currentSchool } = useSchool();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const filtered = navItems.filter(i => role && i.roles.includes(role));
+  const displayName = role === 'sub_admin' && currentSchool ? currentSchool.name : 'Academic Hub';
 
   return (
-    <header className="md:hidden flex items-center justify-between p-3 border-b bg-background">
+    <header className="md:hidden flex items-center justify-between p-3 border-b bg-card shadow-sm">
       <div className="flex items-center gap-2">
-        <GraduationCap className="w-6 h-6 text-primary" />
-        <span className="font-semibold text-sm">Westfield Academy</span>
+        {currentSchool?.logo_url ? (
+          <img src={currentSchool.logo_url} alt="Logo" className="w-7 h-7 rounded-md object-contain" />
+        ) : (
+          <div className="w-7 h-7 rounded-md gradient-primary flex items-center justify-center">
+            <GraduationCap className="w-4 h-4 text-white" />
+          </div>
+        )}
+        <span className="font-semibold text-sm">{displayName}</span>
       </div>
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild>
@@ -52,11 +61,11 @@ const MobileNav = () => {
         </SheetTrigger>
         <SheetContent side="left" className="w-72 p-0">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <div className="p-4 border-b">
+          <div className="p-4 border-b gradient-primary text-white">
             <p className="font-semibold text-sm">{profile?.full_name}</p>
-            <p className="text-xs text-muted-foreground capitalize">{role}</p>
+            <p className="text-xs opacity-80 capitalize">{role}</p>
           </div>
-          <nav className="p-3 space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
+          <nav className="p-3 space-y-0.5 overflow-y-auto max-h-[calc(100vh-140px)]">
             {filtered.map(item => {
               const Icon = iconMap[item.label] || LayoutDashboard;
               return (
@@ -66,8 +75,8 @@ const MobileNav = () => {
                   end={item.path === '/'}
                   onClick={() => setOpen(false)}
                   className={({ isActive }) =>
-                    cn('flex items-center gap-3 px-3 py-2 rounded-md text-sm',
-                      isActive ? 'bg-accent font-medium' : 'hover:bg-accent/50')
+                    cn('flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all',
+                      isActive ? 'bg-primary/10 text-primary font-medium' : 'hover:bg-muted')
                   }
                 >
                   <Icon className="w-4 h-4" />

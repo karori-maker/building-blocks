@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
@@ -33,10 +34,12 @@ const navItems: NavItem[] = [
 
 const AppSidebar = () => {
   const { role, profile, signOut } = useAuth();
+  const { currentSchool } = useSchool();
   const navigate = useNavigate();
 
   const filtered = navItems.filter(item => role && item.roles.includes(role));
-  const schoolLabel = role === 'sub_admin' ? 'Sub-Admin' : role;
+  const displayName = role === 'sub_admin' && currentSchool ? currentSchool.name : 'Academic Hub';
+  const roleLabel = role === 'sub_admin' ? 'Sub-Admin' : role;
 
   const handleSignOut = async () => {
     await signOut();
@@ -44,18 +47,22 @@ const AppSidebar = () => {
   };
 
   return (
-    <aside className="hidden md:flex flex-col w-64 border-r bg-sidebar-background text-sidebar-foreground h-screen sticky top-0">
-      <div className="p-4 border-b flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-          <GraduationCap className="w-5 h-5 text-primary-foreground" />
-        </div>
+    <aside className="hidden md:flex flex-col w-64 bg-sidebar-background text-sidebar-foreground h-screen sticky top-0">
+      <div className="p-4 border-b border-sidebar-border flex items-center gap-3">
+        {currentSchool?.logo_url ? (
+          <img src={currentSchool.logo_url} alt="Logo" className="w-9 h-9 rounded-lg object-contain bg-white/10" />
+        ) : (
+          <div className="w-9 h-9 rounded-lg gradient-primary flex items-center justify-center">
+            <GraduationCap className="w-5 h-5 text-white" />
+          </div>
+        )}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">Westfield Academy</p>
-          <p className="text-xs text-muted-foreground capitalize">{schoolLabel}</p>
+          <p className="text-sm font-semibold truncate text-sidebar-foreground">{displayName}</p>
+          <p className="text-xs text-sidebar-foreground/60 capitalize">{roleLabel}</p>
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+      <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
         {filtered.map(item => (
           <NavLink
             key={item.path}
@@ -63,10 +70,10 @@ const AppSidebar = () => {
             end={item.path === '/'}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
+                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200',
                 isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
-                  : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                  ? 'bg-sidebar-primary text-sidebar-primary-foreground font-medium shadow-sm'
+                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
               )
             }
           >
@@ -76,12 +83,12 @@ const AppSidebar = () => {
         ))}
       </nav>
 
-      <div className="p-3 border-t space-y-2">
+      <div className="p-3 border-t border-sidebar-border space-y-2">
         <div className="px-3 py-2">
-          <p className="text-sm font-medium truncate">{profile?.full_name}</p>
-          <p className="text-xs text-muted-foreground truncate">{profile?.email}</p>
+          <p className="text-sm font-medium truncate text-sidebar-foreground">{profile?.full_name}</p>
+          <p className="text-xs text-sidebar-foreground/50 truncate">{profile?.email}</p>
         </div>
-        <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={handleSignOut}>
+        <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent" onClick={handleSignOut}>
           <LogOut className="w-4 h-4" />
           Sign Out
         </Button>

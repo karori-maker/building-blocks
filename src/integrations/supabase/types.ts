@@ -1047,6 +1047,7 @@ export type Database = {
           created_by: string | null
           email: string | null
           grading_system: string | null
+          headmaster_name: string | null
           id: string
           logo_url: string | null
           name: string
@@ -1060,6 +1061,7 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           grading_system?: string | null
+          headmaster_name?: string | null
           id?: string
           logo_url?: string | null
           name: string
@@ -1073,6 +1075,7 @@ export type Database = {
           created_by?: string | null
           email?: string | null
           grading_system?: string | null
+          headmaster_name?: string | null
           id?: string
           logo_url?: string | null
           name?: string
