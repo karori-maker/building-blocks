@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Shield } from 'lucide-react';
 import { toast } from 'sonner';
-
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -24,8 +23,12 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!email.trim() || !password.trim()) {
+      setError('Please enter both email and password');
+      return;
+    }
     setIsLoading(true);
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(email.trim(), password);
     if (error) setError('Invalid email or password');
     else navigate('/');
     setIsLoading(false);
@@ -43,7 +46,6 @@ const Login = () => {
     setResetLoading(false);
     setShowForgot(false);
   };
-
 
   if (showForgot) {
     return (
@@ -77,17 +79,24 @@ const Login = () => {
           <p className="text-muted-foreground text-sm">School Management System</p>
         </div>
         <Card>
-          <CardHeader className="pb-4"><CardTitle className="text-lg">Sign In</CardTitle><CardDescription>Enter your credentials to access the system</CardDescription></CardHeader>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Sign In</CardTitle>
+            <CardDescription>Enter the credentials provided by your administrator</CardDescription>
+          </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@school.com" required /></div>
-              <div className="space-y-2"><Label htmlFor="password">Password</Label><Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required /></div>
+              <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@school.com" required autoComplete="email" /></div>
+              <div className="space-y-2"><Label htmlFor="password">Password</Label><Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required autoComplete="current-password" /></div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>{isLoading ? 'Signing in...' : 'Sign In'}</Button>
               <Button type="button" variant="link" className="w-full text-sm" onClick={() => setShowForgot(true)}>Forgot your password?</Button>
             </form>
           </CardContent>
         </Card>
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <Shield className="w-3.5 h-3.5" />
+          <span>Protected by role-based access control. Contact your admin for access.</span>
+        </div>
       </div>
     </div>
   );
