@@ -1,7 +1,32 @@
-export const exportToCSV = (data: Record<string, any>[], filename: string, columns?: { key: string; label: string }[]) => {
+export interface ExportSchoolInfo {
+  schoolName?: string;
+  logoUrl?: string;
+  headmasterName?: string;
+}
+
+export const exportToCSV = (
+  data: Record<string, any>[],
+  filename: string,
+  columns?: { key: string; label: string }[],
+  schoolInfo?: ExportSchoolInfo
+) => {
   if (data.length === 0) return;
   const cols = columns || Object.keys(data[0]).filter(k => k !== 'id' && !k.endsWith('_id') && k !== 'created_at' && k !== 'updated_at').map(k => ({ key: k, label: k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) }));
+
+  const lines: string[] = [];
+
+  // Add school branding header
+  if (schoolInfo?.schoolName) {
+    lines.push(`"${schoolInfo.schoolName}"`);
+    if (schoolInfo.headmasterName) lines.push(`"Headmaster: ${schoolInfo.headmasterName}"`);
+    lines.push(`"Generated: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}"`);
+    lines.push(`"Report: ${filename.replace(/_/g, ' ')}"`);
+    lines.push(''); // blank line separator
+  }
+
   const header = cols.map(c => c.label).join(',');
+  lines.push(header);
+
   const rows = data.map(row => cols.map(c => {
     let val = row[c.key];
     if (val === null || val === undefined) val = '';
@@ -9,7 +34,9 @@ export const exportToCSV = (data: Record<string, any>[], filename: string, colum
     val = String(val).replace(/"/g, '""');
     return `"${val}"`;
   }).join(','));
-  const csv = [header, ...rows].join('\n');
+  lines.push(...rows);
+
+  const csv = lines.join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

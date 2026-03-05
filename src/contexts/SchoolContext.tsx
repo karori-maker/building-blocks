@@ -11,6 +11,7 @@ interface School {
   logo_url?: string;
   academic_year?: string;
   grading_system?: string;
+  headmaster_name?: string;
 }
 
 interface SchoolContextType {
@@ -43,7 +44,6 @@ export const SchoolProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const list = (data || []) as School[];
     setSchools(list);
     
-    // Auto-select first school if none selected
     if (list.length > 0 && !currentSchool) {
       setCurrentSchool(list[0]);
     } else if (list.length === 0) {

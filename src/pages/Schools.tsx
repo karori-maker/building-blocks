@@ -25,17 +25,18 @@ const SchoolsPage = () => {
   };
 
   const AddSchoolForm = ({ onClose }: { onClose: () => void }) => {
-    const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', academic_year: '2025-2026' });
+    const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', academic_year: '2025-2026', headmaster_name: '' });
     const [saving, setSaving] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('schools').insert({ name: form.name, email: form.email || null, phone: form.phone || null, address: form.address || null, academic_year: form.academic_year });
+      const { error } = await supabase.from('schools').insert({ name: form.name, email: form.email || null, phone: form.phone || null, address: form.address || null, academic_year: form.academic_year, headmaster_name: form.headmaster_name || null } as any);
       if (error) toast.error(error.message); else { toast.success('School added'); onClose(); refetch(); }
       setSaving(false);
     };
     return (
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-1"><Label>School Name *</Label><Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+        <div className="space-y-1"><Label>Headmaster Name</Label><Input value={form.headmaster_name} onChange={e => setForm(f => ({ ...f, headmaster_name: e.target.value }))} placeholder="e.g. Mr. John Smith" /></div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
           <div className="space-y-1"><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
@@ -48,17 +49,18 @@ const SchoolsPage = () => {
   };
 
   const EditSchoolForm = ({ school, onClose }: { school: any; onClose: () => void }) => {
-    const [form, setForm] = useState({ name: school.name, email: school.email || '', phone: school.phone || '', address: school.address || '', academic_year: school.academic_year || '' });
+    const [form, setForm] = useState({ name: school.name, email: school.email || '', phone: school.phone || '', address: school.address || '', academic_year: school.academic_year || '', headmaster_name: school.headmaster_name || '' });
     const [saving, setSaving] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('schools').update({ name: form.name, email: form.email || null, phone: form.phone || null, address: form.address || null, academic_year: form.academic_year }).eq('id', school.id);
+      const { error } = await supabase.from('schools').update({ name: form.name, email: form.email || null, phone: form.phone || null, address: form.address || null, academic_year: form.academic_year, headmaster_name: form.headmaster_name || null } as any).eq('id', school.id);
       if (error) toast.error(error.message); else { toast.success('School updated'); onClose(); refetch(); }
       setSaving(false);
     };
     return (
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="space-y-1"><Label>School Name *</Label><Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+        <div className="space-y-1"><Label>Headmaster Name</Label><Input value={form.headmaster_name} onChange={e => setForm(f => ({ ...f, headmaster_name: e.target.value }))} placeholder="e.g. Mr. John Smith" /></div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1"><Label>Email</Label><Input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
           <div className="space-y-1"><Label>Phone</Label><Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></div>
@@ -117,10 +119,11 @@ const SchoolsPage = () => {
                 {schools.length === 0 ? <p className="text-sm text-muted-foreground">No schools added yet. Add your first school to get started.</p> : (
                   <div className="overflow-x-auto">
                     <Table>
-                      <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Phone</TableHead><TableHead>Year</TableHead><TableHead className="w-[140px]">Actions</TableHead></TableRow></TableHeader>
+                      <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Headmaster</TableHead><TableHead>Email</TableHead><TableHead>Phone</TableHead><TableHead>Year</TableHead><TableHead className="w-[140px]">Actions</TableHead></TableRow></TableHeader>
                       <TableBody>{schools.map(s => (
                         <TableRow key={s.id}>
                           <TableCell className="font-medium">{s.name}</TableCell>
+                          <TableCell>{(s as any).headmaster_name || '—'}</TableCell>
                           <TableCell>{s.email || '—'}</TableCell>
                           <TableCell>{s.phone || '—'}</TableCell>
                           <TableCell><Badge variant="outline">{s.academic_year}</Badge></TableCell>
