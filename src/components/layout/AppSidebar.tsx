@@ -29,6 +29,7 @@ const navItems: NavItem[] = [
   { label: 'Communication', icon: MessageSquare, path: '/communication', roles: ['admin', 'sub_admin', 'teacher', 'student', 'parent'] },
   { label: 'Events', icon: CalendarDays, path: '/events', roles: ['admin', 'sub_admin', 'teacher', 'student', 'parent'] },
   { label: 'Materials', icon: PackageCheck, path: '/materials', roles: ['admin', 'sub_admin', 'teacher', 'student', 'parent'] },
+  { label: 'Permissions', icon: Shield, path: '/permissions', roles: ['admin'] },
   { label: 'Settings', icon: Settings, path: '/settings', roles: ['admin', 'sub_admin'] },
 ];
 

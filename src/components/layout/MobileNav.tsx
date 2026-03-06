@@ -11,7 +11,7 @@ const iconMap: Record<string, React.ElementType> = {
   Dashboard: LayoutDashboard, Schools: GraduationCap, Students: Users, Staff: UserCog, Attendance: ClipboardCheck,
   Academics: BookOpen, Timetable: Clock, Assignments: FileText, Fees: CreditCard,
   Finance: DollarSign, Library: Library, Transport: Bus, Inventory: Package,
-  Discipline: Shield, Communication: MessageSquare, Events: CalendarDays, Materials: PackageCheck, Settings: Settings,
+  Discipline: Shield, Communication: MessageSquare, Events: CalendarDays, Materials: PackageCheck, Permissions: Shield, Settings: Settings,
 };
 
 const navItems = [
@@ -32,6 +32,7 @@ const navItems = [
   { label: 'Communication', path: '/communication', roles: ['admin','sub_admin','teacher','student','parent'] },
   { label: 'Events', path: '/events', roles: ['admin','sub_admin','teacher','student','parent'] },
   { label: 'Materials', path: '/materials', roles: ['admin','sub_admin','teacher','student','parent'] },
+  { label: 'Permissions', path: '/permissions', roles: ['admin'] },
   { label: 'Settings', path: '/settings', roles: ['admin','sub_admin'] },
 ];
 

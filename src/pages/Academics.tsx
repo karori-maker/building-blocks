@@ -1,6 +1,8 @@
 import ModulePage from '@/components/common/ModulePage';
 import RoleSection from '@/components/common/RoleSection';
 import AddDialog from '@/components/common/AddDialog';
+import EditDialog from '@/components/common/EditDialog';
+import DeleteButton from '@/components/common/DeleteButton';
 import ExportButton from '@/components/common/ExportButton';
 import ReportCard, { getGrade } from '@/components/common/ReportCard';
 import { BookOpen } from 'lucide-react';
@@ -154,6 +156,35 @@ const AcademicsPage = () => {
     );
   };
 
+  const EditExamForm = ({ exam, onClose }: { exam: any; onClose: () => void }) => {
+    const [form, setForm] = useState({ name: exam.name, exam_type: exam.exam_type || 'midterm', subject_id: exam.subject_id || '', class_id: exam.class_id || '', date: exam.date || '', max_marks: String(exam.max_marks || 100) });
+    const [saving, setSaving] = useState(false);
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault(); setSaving(true);
+      const { error } = await supabase.from('exams').update({ name: form.name, exam_type: form.exam_type, subject_id: form.subject_id || null, class_id: form.class_id || null, date: form.date || null, max_marks: Number(form.max_marks) }).eq('id', exam.id);
+      if (error) toast.error(error.message); else { toast.success('Exam updated'); onClose(); fetchData(); }
+      setSaving(false);
+    };
+    return (
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="space-y-1"><Label>Name *</Label><Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1"><Label>Type</Label><Select value={form.exam_type} onValueChange={v => setForm(f => ({ ...f, exam_type: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="midterm">Midterm</SelectItem><SelectItem value="final">Final</SelectItem><SelectItem value="quiz">Quiz</SelectItem><SelectItem value="test">Test</SelectItem></SelectContent></Select></div>
+          <div className="space-y-1"><Label>Subject</Label><Select value={form.subject_id} onValueChange={v => setForm(f => ({ ...f, subject_id: v }))}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></div>
+          <div className="space-y-1"><Label>Class</Label><Select value={form.class_id} onValueChange={v => setForm(f => ({ ...f, class_id: v }))}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name} {c.section}</SelectItem>)}</SelectContent></Select></div>
+          <div className="space-y-1"><Label>Date</Label><Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+          <div className="space-y-1"><Label>Max Marks</Label><Input type="number" value={form.max_marks} onChange={e => setForm(f => ({ ...f, max_marks: e.target.value }))} /></div>
+        </div>
+        <Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</Button>
+      </form>
+    );
+  };
+
+  const handleDeleteExam = async (id: string) => {
+    const { error } = await supabase.from('exams').delete().eq('id', id);
+    if (error) toast.error(error.message); else { toast.success('Exam deleted'); fetchData(); }
+  };
+
   const AddGradeForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ student_id: '', subject_id: '', exam_id: '', marks_obtained: '', grade: '', remarks: '' });
     const [saving, setSaving] = useState(false);
@@ -228,8 +259,9 @@ const AcademicsPage = () => {
                 </div>
               </CardHeader>
               <CardContent>{loading ? <p className="text-sm text-muted-foreground">Loading...</p> : exams.length === 0 ? <p className="text-sm text-muted-foreground">No exams found.</p> : (
-                <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Subject</TableHead><TableHead>Class</TableHead><TableHead>Date</TableHead><TableHead>Max Marks</TableHead></TableRow></TableHeader>
-                <TableBody>{exams.map(e => <TableRow key={e.id}><TableCell className="font-medium">{e.name}</TableCell><TableCell><Badge variant="outline" className="capitalize">{e.exam_type}</Badge></TableCell><TableCell>{e.subjects?.name || '—'}</TableCell><TableCell>{e.classes ? `${e.classes.name} ${e.classes.section}` : '—'}</TableCell><TableCell className="font-mono text-xs">{e.date || '—'}</TableCell><TableCell>{e.max_marks}</TableCell></TableRow>)}</TableBody></Table></div>
+                <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Subject</TableHead><TableHead>Class</TableHead><TableHead>Date</TableHead><TableHead>Max Marks</TableHead><TableHead className="w-[80px]">Actions</TableHead></TableRow></TableHeader>
+                <TableBody>{exams.map(e => <TableRow key={e.id}><TableCell className="font-medium">{e.name}</TableCell><TableCell><Badge variant="outline" className="capitalize">{e.exam_type}</Badge></TableCell><TableCell>{e.subjects?.name || '—'}</TableCell><TableCell>{e.classes ? `${e.classes.name} ${e.classes.section}` : '—'}</TableCell><TableCell className="font-mono text-xs">{e.date || '—'}</TableCell><TableCell>{e.max_marks}</TableCell>
+                <TableCell><RoleSection roles={['admin']}><div className="flex gap-1"><EditDialog title="Edit Exam">{({ onClose }) => <EditExamForm exam={e} onClose={onClose} />}</EditDialog><DeleteButton onDelete={() => handleDeleteExam(e.id)} itemName={e.name} /></div></RoleSection></TableCell></TableRow>)}</TableBody></Table></div>
               )}</CardContent>
             </Card>
           </TabsContent>
