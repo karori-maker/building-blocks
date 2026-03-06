@@ -4,7 +4,7 @@ import AddDialog from '@/components/common/AddDialog';
 import EditDialog from '@/components/common/EditDialog';
 import DeleteButton from '@/components/common/DeleteButton';
 import ExportButton from '@/components/common/ExportButton';
-import { UserCog } from 'lucide-react';
+import { UserCog, UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -80,25 +80,66 @@ const StaffPage = () => {
     </div><Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</Button></form>);
   };
 
+  // Create Account Form for any staff member
+  const CreateStaffAccountForm = ({ staffMember, onClose }: { staffMember: any; onClose: () => void }) => {
+    const [form, setForm] = useState({ email: staffMember.email || '', password: '', role: 'teacher' });
+    const [saving, setSaving] = useState(false);
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault(); setSaving(true);
+      const { data, error } = await supabase.functions.invoke('create-staff-account', {
+        body: { email: form.email, password: form.password, full_name: staffMember.full_name, employee_id: staffMember.employee_id, role: form.role },
+      });
+      if (error || data?.error) toast.error(data?.error || error?.message || 'Failed to create account');
+      else { toast.success(`Account created for ${staffMember.full_name} as ${form.role}!`); onClose(); fetchData(); }
+      setSaving(false);
+    };
+    return (
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <p className="text-sm text-muted-foreground">Creating account for <strong>{staffMember.full_name}</strong> (ID: {staffMember.employee_id})</p>
+        <div className="space-y-1"><Label>Email *</Label><Input type="email" required value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></div>
+        <div className="space-y-1"><Label>Role *</Label>
+          <Select value={form.role} onValueChange={v => setForm(f => ({ ...f, role: v }))}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="teacher">Teacher</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1"><Label>Temporary Password *</Label><Input type="password" required minLength={6} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} /></div>
+        <Button type="submit" className="w-full" disabled={saving}>{saving ? 'Creating...' : 'Create Account'}</Button>
+      </form>
+    );
+  };
+
   const StaffTable = ({ list }: { list: any[] }) => (
-    <Table><TableHeader><TableRow><TableHead>Employee ID</TableHead><TableHead>Name</TableHead><TableHead>Designation</TableHead><TableHead>Department</TableHead><TableHead>Status</TableHead><TableHead className="w-[80px]">Actions</TableHead></TableRow></TableHeader>
+    <Table><TableHeader><TableRow><TableHead>Employee ID</TableHead><TableHead>Name</TableHead><TableHead>Designation</TableHead><TableHead>Department</TableHead><TableHead>Status</TableHead><TableHead>Account</TableHead><TableHead className="w-[120px]">Actions</TableHead></TableRow></TableHeader>
     <TableBody>{list.map(s => (<TableRow key={s.id}><TableCell className="font-mono text-xs">{s.employee_id}</TableCell><TableCell className="font-medium">{s.full_name}</TableCell><TableCell>{s.designation || '—'}</TableCell><TableCell>{s.department || '—'}</TableCell><TableCell><Badge variant="outline" className="capitalize">{s.status}</Badge></TableCell>
-    <TableCell><div className="flex gap-1"><EditDialog title="Edit Staff">{({ onClose }) => <EditForm item={s} onClose={onClose} />}</EditDialog><DeleteButton onDelete={() => handleDelete(s.id)} itemName={s.full_name} /></div></TableCell></TableRow>))}</TableBody></Table>
+    <TableCell>{s.user_id ? <Badge variant="secondary" className="text-xs">Active</Badge> : <Badge variant="outline" className="text-xs text-muted-foreground">No Account</Badge>}</TableCell>
+    <TableCell><div className="flex gap-1">
+      <EditDialog title="Edit Staff">{({ onClose }) => <EditForm item={s} onClose={onClose} />}</EditDialog>
+      <DeleteButton onDelete={() => handleDelete(s.id)} itemName={s.full_name} />
+      {!s.user_id && (
+        <AddDialog title="Create Account" triggerLabel="">
+          {({ onClose }) => <CreateStaffAccountForm staffMember={s} onClose={onClose} />}
+        </AddDialog>
+      )}
+    </div></TableCell></TableRow>))}</TableBody></Table>
   );
 
   return (
-    <ModulePage title="Staff" description="Manage staff records" icon={UserCog}>
+    <ModulePage title="Staff" description="Manage staff records and accounts" icon={UserCog}>
       <RoleSection roles={['admin']}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Staff</p><p className="text-2xl font-bold">{staff.length}</p></CardContent></Card>
-          <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Active Staff</p><p className="text-2xl font-bold text-green-600">{totalActive}</p></CardContent></Card>
-          <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Departments</p><div className="flex flex-wrap gap-1 mt-1">{departments.map(d => <Badge key={d} variant="secondary">{d}</Badge>)}</div></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Active Staff</p><p className="text-2xl font-bold text-emerald-600">{totalActive}</p></CardContent></Card>
+          <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">With Accounts</p><p className="text-2xl font-bold text-primary">{staff.filter(s => s.user_id).length}</p></CardContent></Card>
         </div>
 
         <Tabs defaultValue="all">
           <TabsList>
             <TabsTrigger value="all">All Staff</TabsTrigger>
             <TabsTrigger value="by-dept">By Department</TabsTrigger>
+            <TabsTrigger value="accounts">Account Management</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all">
@@ -139,6 +180,22 @@ const StaffPage = () => {
                 </Card>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="accounts">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2"><UserPlus className="w-4 h-4" /> Staff Account Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">Staff members without accounts are listed below. Click the user icon in the Actions column to create a login account for them.</p>
+                {staff.filter(s => !s.user_id).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">All staff members have accounts.</p>
+                ) : (
+                  <div className="overflow-x-auto"><StaffTable list={staff.filter(s => !s.user_id)} /></div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </RoleSection>

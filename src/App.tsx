@@ -27,6 +27,7 @@ import SettingsPage from "@/pages/Settings";
 import SchoolsPage from "@/pages/Schools";
 import NotFound from "@/pages/NotFound";
 import ResetPassword from "@/pages/ResetPassword";
+import PermissionsPage from "@/pages/Permissions";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,7 @@ const App = () => (
                 <Route path="/events" element={<EventsPage />} />
                 <Route path="/materials" element={<MaterialsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/permissions" element={<PermissionsPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
