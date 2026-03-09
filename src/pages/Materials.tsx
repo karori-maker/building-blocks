@@ -5,6 +5,7 @@ import { PackageCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +18,7 @@ import { toast } from 'sonner';
 
 const MaterialsPage = () => {
   const { user } = useAuth();
+  const { currentSchool } = useSchool();
   const [materials, setMaterials] = useState<any[]>([]);
   const [checks, setChecks] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
@@ -77,6 +79,7 @@ const MaterialsPage = () => {
         description: form.description || null,
         class_id: form.class_id || null,
         subject_id: form.subject_id || null,
+        school_id: currentSchool?.id || null,
       });
       if (error) toast.error(error.message); else { toast.success('Material added'); onClose(); fetchData(); }
       setSaving(false);

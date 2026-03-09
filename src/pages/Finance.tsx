@@ -7,6 +7,7 @@ import ExportButton from '@/components/common/ExportButton';
 import { DollarSign } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +19,7 @@ import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/export';
 
 const FinancePage = () => {
+  const { currentSchool } = useSchool();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +35,7 @@ const FinancePage = () => {
   const AddForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ type: 'income', category: '', amount: '', description: '', date: new Date().toISOString().split('T')[0] });
     const [saving, setSaving] = useState(false);
-    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('finance_transactions').insert({ type: form.type, category: form.category, amount: Number(form.amount), description: form.description || null, date: form.date }); if (error) toast.error(error.message); else { toast.success('Transaction added'); onClose(); fetchData(); } setSaving(false); };
+    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('finance_transactions').insert({ type: form.type, category: form.category, amount: Number(form.amount), description: form.description || null, date: form.date, school_id: currentSchool?.id || null }); if (error) toast.error(error.message); else { toast.success('Transaction added'); onClose(); fetchData(); } setSaving(false); };
     return (<form onSubmit={handleSubmit} className="space-y-3"><div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Type *</Label><Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="income">Income</SelectItem><SelectItem value="expense">Expense</SelectItem></SelectContent></Select></div><div className="space-y-1"><Label>Category *</Label><Input required value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} /></div><div className="space-y-1"><Label>Amount *</Label><Input type="number" required value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></div><div className="space-y-1"><Label>Date *</Label><Input type="date" required value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div></div><div className="space-y-1"><Label>Description</Label><Input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div><Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Add Transaction'}</Button></form>);
   };
 

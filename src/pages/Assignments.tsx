@@ -7,6 +7,7 @@ import ExportButton from '@/components/common/ExportButton';
 import { FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/export';
 
 const AssignmentsPage = () => {
+  const { currentSchool } = useSchool();
   const [assignments, setAssignments] = useState<any[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
@@ -53,7 +55,7 @@ const AssignmentsPage = () => {
     const [saving, setSaving] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('assignments').insert({ title: form.title, description: form.description || null, class_id: form.class_id || null, subject_id: form.subject_id || null, due_date: form.due_date || null, max_marks: Number(form.max_marks) });
+      const { error } = await supabase.from('assignments').insert({ title: form.title, description: form.description || null, class_id: form.class_id || null, subject_id: form.subject_id || null, due_date: form.due_date || null, max_marks: Number(form.max_marks), school_id: currentSchool?.id || null });
       if (error) toast.error(error.message); else { toast.success('Assignment added'); onClose(); fetchData(); }
       setSaving(false);
     };

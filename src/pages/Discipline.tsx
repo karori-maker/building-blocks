@@ -7,6 +7,7 @@ import ExportButton from '@/components/common/ExportButton';
 import { Shield } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,7 @@ import { exportToCSV } from '@/lib/export';
 const severityColor: Record<string, string> = { minor: 'bg-yellow-100 text-yellow-800', moderate: 'bg-orange-100 text-orange-800', major: 'bg-red-100 text-red-800' };
 
 const DisciplinePage = () => {
+  const { currentSchool } = useSchool();
   const [incidents, setIncidents] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,7 @@ const DisciplinePage = () => {
   const AddForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ student_id: '', description: '', severity: 'minor', action_taken: '', date: new Date().toISOString().split('T')[0] });
     const [saving, setSaving] = useState(false);
-    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('discipline_incidents').insert({ student_id: form.student_id, description: form.description, severity: form.severity, action_taken: form.action_taken || null, date: form.date }); if (error) toast.error(error.message); else { toast.success('Incident recorded'); onClose(); fetchData(); } setSaving(false); };
+    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('discipline_incidents').insert({ student_id: form.student_id, description: form.description, severity: form.severity, action_taken: form.action_taken || null, date: form.date, school_id: currentSchool?.id || null }); if (error) toast.error(error.message); else { toast.success('Incident recorded'); onClose(); fetchData(); } setSaving(false); };
     return (<form onSubmit={handleSubmit} className="space-y-3"><div className="space-y-1"><Label>Student *</Label><Select value={form.student_id} onValueChange={v => setForm(f => ({ ...f, student_id: v }))}><SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger><SelectContent>{students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}</SelectContent></Select></div><div className="space-y-1"><Label>Description *</Label><Textarea required value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></div><div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Severity</Label><Select value={form.severity} onValueChange={v => setForm(f => ({ ...f, severity: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="minor">Minor</SelectItem><SelectItem value="moderate">Moderate</SelectItem><SelectItem value="major">Major</SelectItem></SelectContent></Select></div><div className="space-y-1"><Label>Date</Label><Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div></div><div className="space-y-1"><Label>Action Taken</Label><Input value={form.action_taken} onChange={e => setForm(f => ({ ...f, action_taken: e.target.value }))} /></div><Button type="submit" className="w-full" disabled={saving || !form.student_id}>{saving ? 'Saving...' : 'Record Incident'}</Button></form>);
   };
 

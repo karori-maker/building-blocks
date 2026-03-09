@@ -7,6 +7,7 @@ import ExportButton from '@/components/common/ExportButton';
 import { Package } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +18,7 @@ import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/export';
 
 const InventoryPage = () => {
+  const { currentSchool } = useSchool();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const fetchData = () => { setLoading(true); supabase.from('inventory').select('*').order('item_name').then(({ data }) => { setItems(data || []); setLoading(false); }); };
@@ -28,7 +30,7 @@ const InventoryPage = () => {
   const AddForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ item_name: '', category: '', quantity: '0', min_quantity: '5', unit_price: '', location: '' });
     const [saving, setSaving] = useState(false);
-    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('inventory').insert({ item_name: form.item_name, category: form.category || null, quantity: Number(form.quantity), min_quantity: Number(form.min_quantity), unit_price: form.unit_price ? Number(form.unit_price) : null, location: form.location || null }); if (error) toast.error(error.message); else { toast.success('Item added'); onClose(); fetchData(); } setSaving(false); };
+    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('inventory').insert({ item_name: form.item_name, category: form.category || null, quantity: Number(form.quantity), min_quantity: Number(form.min_quantity), unit_price: form.unit_price ? Number(form.unit_price) : null, location: form.location || null, school_id: currentSchool?.id || null }); if (error) toast.error(error.message); else { toast.success('Item added'); onClose(); fetchData(); } setSaving(false); };
     return (<form onSubmit={handleSubmit} className="space-y-3"><div className="space-y-1"><Label>Item Name *</Label><Input required value={form.item_name} onChange={e => setForm(f => ({ ...f, item_name: e.target.value }))} /></div><div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Category</Label><Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} /></div><div className="space-y-1"><Label>Quantity</Label><Input type="number" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} /></div><div className="space-y-1"><Label>Min Qty</Label><Input type="number" value={form.min_quantity} onChange={e => setForm(f => ({ ...f, min_quantity: e.target.value }))} /></div><div className="space-y-1"><Label>Unit Price</Label><Input type="number" step="0.01" value={form.unit_price} onChange={e => setForm(f => ({ ...f, unit_price: e.target.value }))} /></div><div className="space-y-1"><Label>Location</Label><Input value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} /></div></div><Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Add Item'}</Button></form>);
   };
 

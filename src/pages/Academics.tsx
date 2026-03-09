@@ -9,6 +9,7 @@ import { BookOpen } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,6 +23,7 @@ import { exportToCSV } from '@/lib/export';
 
 const AcademicsPage = () => {
   const { user, role } = useAuth();
+  const { currentSchool } = useSchool();
   const [exams, setExams] = useState<any[]>([]);
   const [grades, setGrades] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
@@ -137,7 +139,7 @@ const AcademicsPage = () => {
     const [saving, setSaving] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('exams').insert({ name: form.name, exam_type: form.exam_type, subject_id: form.subject_id || null, class_id: form.class_id || null, date: form.date || null, max_marks: Number(form.max_marks) });
+      const { error } = await supabase.from('exams').insert({ name: form.name, exam_type: form.exam_type, subject_id: form.subject_id || null, class_id: form.class_id || null, date: form.date || null, max_marks: Number(form.max_marks), school_id: currentSchool?.id || null });
       if (error) toast.error(error.message); else { toast.success('Exam added'); onClose(); fetchData(); }
       setSaving(false);
     };
@@ -190,7 +192,7 @@ const AcademicsPage = () => {
     const [saving, setSaving] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('grades').insert({ student_id: form.student_id, subject_id: form.subject_id || null, exam_id: form.exam_id || null, marks_obtained: form.marks_obtained ? Number(form.marks_obtained) : null, grade: form.grade || null, remarks: form.remarks || null });
+      const { error } = await supabase.from('grades').insert({ student_id: form.student_id, subject_id: form.subject_id || null, exam_id: form.exam_id || null, marks_obtained: form.marks_obtained ? Number(form.marks_obtained) : null, grade: form.grade || null, remarks: form.remarks || null, school_id: currentSchool?.id || null });
       if (error) toast.error(error.message); else { toast.success('Grade added'); onClose(); fetchData(); }
       setSaving(false);
     };
@@ -214,7 +216,7 @@ const AcademicsPage = () => {
     const [saving, setSaving] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('subjects').insert({ name: form.name, code: form.code || null, class_id: form.class_id || null });
+      const { error } = await supabase.from('subjects').insert({ name: form.name, code: form.code || null, class_id: form.class_id || null, school_id: currentSchool?.id || null });
       if (error) toast.error(error.message); else { toast.success('Subject added'); onClose(); fetchData(); }
       setSaving(false);
     };

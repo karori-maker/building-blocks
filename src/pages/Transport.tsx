@@ -7,6 +7,7 @@ import ExportButton from '@/components/common/ExportButton';
 import { Bus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,7 @@ import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/export';
 
 const TransportPage = () => {
+  const { currentSchool } = useSchool();
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [routes, setRoutes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +33,7 @@ const TransportPage = () => {
   const AddVehicleForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ vehicle_number: '', driver_name: '', driver_phone: '', capacity: '40' });
     const [saving, setSaving] = useState(false);
-    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('transport_vehicles').insert({ vehicle_number: form.vehicle_number, driver_name: form.driver_name || null, driver_phone: form.driver_phone || null, capacity: Number(form.capacity) }); if (error) toast.error(error.message); else { toast.success('Vehicle added'); onClose(); fetchData(); } setSaving(false); };
+    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('transport_vehicles').insert({ vehicle_number: form.vehicle_number, driver_name: form.driver_name || null, driver_phone: form.driver_phone || null, capacity: Number(form.capacity), school_id: currentSchool?.id || null }); if (error) toast.error(error.message); else { toast.success('Vehicle added'); onClose(); fetchData(); } setSaving(false); };
     return (<form onSubmit={handleSubmit} className="space-y-3"><div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Vehicle Number *</Label><Input required value={form.vehicle_number} onChange={e => setForm(f => ({ ...f, vehicle_number: e.target.value }))} /></div><div className="space-y-1"><Label>Driver Name</Label><Input value={form.driver_name} onChange={e => setForm(f => ({ ...f, driver_name: e.target.value }))} /></div><div className="space-y-1"><Label>Driver Phone</Label><Input value={form.driver_phone} onChange={e => setForm(f => ({ ...f, driver_phone: e.target.value }))} /></div><div className="space-y-1"><Label>Capacity</Label><Input type="number" value={form.capacity} onChange={e => setForm(f => ({ ...f, capacity: e.target.value }))} /></div></div><Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Add Vehicle'}</Button></form>);
   };
 
@@ -45,7 +47,7 @@ const TransportPage = () => {
   const AddRouteForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ route_name: '', vehicle_id: '', stops: '' });
     const [saving, setSaving] = useState(false);
-    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const stopsArr = form.stops ? form.stops.split(',').map(s => s.trim()).filter(Boolean) : null; const { error } = await supabase.from('transport_routes').insert({ route_name: form.route_name, vehicle_id: form.vehicle_id || null, stops: stopsArr }); if (error) toast.error(error.message); else { toast.success('Route added'); onClose(); fetchData(); } setSaving(false); };
+    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const stopsArr = form.stops ? form.stops.split(',').map(s => s.trim()).filter(Boolean) : null; const { error } = await supabase.from('transport_routes').insert({ route_name: form.route_name, vehicle_id: form.vehicle_id || null, stops: stopsArr, school_id: currentSchool?.id || null }); if (error) toast.error(error.message); else { toast.success('Route added'); onClose(); fetchData(); } setSaving(false); };
     return (<form onSubmit={handleSubmit} className="space-y-3"><div className="space-y-1"><Label>Route Name *</Label><Input required value={form.route_name} onChange={e => setForm(f => ({ ...f, route_name: e.target.value }))} /></div><div className="space-y-1"><Label>Vehicle</Label><Select value={form.vehicle_id} onValueChange={v => setForm(f => ({ ...f, vehicle_id: v }))}><SelectTrigger><SelectValue placeholder="Select vehicle" /></SelectTrigger><SelectContent>{vehicles.map(v => <SelectItem key={v.id} value={v.id}>{v.vehicle_number}</SelectItem>)}</SelectContent></Select></div><div className="space-y-1"><Label>Stops (comma-separated)</Label><Input value={form.stops} onChange={e => setForm(f => ({ ...f, stops: e.target.value }))} placeholder="Stop 1, Stop 2" /></div><Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Add Route'}</Button></form>);
   };
 

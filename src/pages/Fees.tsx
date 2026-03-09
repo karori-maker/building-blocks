@@ -7,6 +7,7 @@ import ExportButton from '@/components/common/ExportButton';
 import { CreditCard } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,7 @@ import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/export';
 
 const FeesPage = () => {
+  const { currentSchool } = useSchool();
   const [structure, setStructure] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
@@ -44,7 +46,7 @@ const FeesPage = () => {
   const AddFeeForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ fee_type: '', amount: '', class_id: '', academic_year: '2025-2026' });
     const [saving, setSaving] = useState(false);
-    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('fee_structure').insert({ fee_type: form.fee_type, amount: Number(form.amount), class_id: form.class_id || null, academic_year: form.academic_year }); if (error) toast.error(error.message); else { toast.success('Fee type added'); onClose(); fetchData(); } setSaving(false); };
+    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('fee_structure').insert({ fee_type: form.fee_type, amount: Number(form.amount), class_id: form.class_id || null, academic_year: form.academic_year, school_id: currentSchool?.id || null }); if (error) toast.error(error.message); else { toast.success('Fee type added'); onClose(); fetchData(); } setSaving(false); };
     return (<form onSubmit={handleSubmit} className="space-y-3"><div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Fee Type *</Label><Input required value={form.fee_type} onChange={e => setForm(f => ({ ...f, fee_type: e.target.value }))} /></div><div className="space-y-1"><Label>Amount *</Label><Input type="number" required value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></div><div className="space-y-1"><Label>Class</Label><Select value={form.class_id} onValueChange={v => setForm(f => ({ ...f, class_id: v }))}><SelectTrigger><SelectValue placeholder="All classes" /></SelectTrigger><SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name} {c.section}</SelectItem>)}</SelectContent></Select></div><div className="space-y-1"><Label>Academic Year</Label><Input value={form.academic_year} onChange={e => setForm(f => ({ ...f, academic_year: e.target.value }))} /></div></div><Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Add Fee Type'}</Button></form>);
   };
 
@@ -58,7 +60,7 @@ const FeesPage = () => {
   const AddPaymentForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ student_id: '', fee_structure_id: '', amount_paid: '', payment_method: 'cash', receipt_number: '' });
     const [saving, setSaving] = useState(false);
-    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('fee_payments').insert({ student_id: form.student_id, fee_structure_id: form.fee_structure_id || null, amount_paid: Number(form.amount_paid), payment_method: form.payment_method, receipt_number: form.receipt_number || null }); if (error) toast.error(error.message); else { toast.success('Payment recorded'); onClose(); fetchData(); } setSaving(false); };
+    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('fee_payments').insert({ student_id: form.student_id, fee_structure_id: form.fee_structure_id || null, amount_paid: Number(form.amount_paid), payment_method: form.payment_method, receipt_number: form.receipt_number || null, school_id: currentSchool?.id || null }); if (error) toast.error(error.message); else { toast.success('Payment recorded'); onClose(); fetchData(); } setSaving(false); };
     return (<form onSubmit={handleSubmit} className="space-y-3"><div className="space-y-1"><Label>Student *</Label><Select value={form.student_id} onValueChange={v => setForm(f => ({ ...f, student_id: v }))}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}</SelectContent></Select></div><div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Fee Type</Label><Select value={form.fee_structure_id} onValueChange={v => setForm(f => ({ ...f, fee_structure_id: v }))}><SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger><SelectContent>{structure.map(s => <SelectItem key={s.id} value={s.id}>{s.fee_type}</SelectItem>)}</SelectContent></Select></div><div className="space-y-1"><Label>Amount *</Label><Input type="number" required value={form.amount_paid} onChange={e => setForm(f => ({ ...f, amount_paid: e.target.value }))} /></div><div className="space-y-1"><Label>Method</Label><Select value={form.payment_method} onValueChange={v => setForm(f => ({ ...f, payment_method: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cash">Cash</SelectItem><SelectItem value="card">Card</SelectItem><SelectItem value="bank_transfer">Bank Transfer</SelectItem><SelectItem value="online">Online</SelectItem></SelectContent></Select></div><div className="space-y-1"><Label>Receipt #</Label><Input value={form.receipt_number} onChange={e => setForm(f => ({ ...f, receipt_number: e.target.value }))} /></div></div><Button type="submit" className="w-full" disabled={saving || !form.student_id}>{saving ? 'Saving...' : 'Record Payment'}</Button></form>);
   };
 

@@ -6,6 +6,7 @@ import ExportButton from '@/components/common/ExportButton';
 import { MessageSquare } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const CommunicationPage = () => {
   const { user } = useAuth();
+  const { currentSchool } = useSchool();
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +35,7 @@ const CommunicationPage = () => {
   const AddAnnouncementForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ title: '', content: '', priority: 'normal', target_role: '' });
     const [saving, setSaving] = useState(false);
-    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('announcements').insert({ title: form.title, content: form.content || null, priority: form.priority, target_role: (form.target_role as any) || null, created_by: user?.id }); if (error) toast.error(error.message); else { toast.success('Announcement posted'); onClose(); fetchData(); } setSaving(false); };
+    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('announcements').insert({ title: form.title, content: form.content || null, priority: form.priority, target_role: (form.target_role as any) || null, created_by: user?.id, school_id: currentSchool?.id || null }); if (error) toast.error(error.message); else { toast.success('Announcement posted'); onClose(); fetchData(); } setSaving(false); };
     return (<form onSubmit={handleSubmit} className="space-y-3"><div className="space-y-1"><Label>Title *</Label><Input required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div><div className="space-y-1"><Label>Content</Label><Textarea value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} /></div><div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Priority</Label><Select value={form.priority} onValueChange={v => setForm(f => ({ ...f, priority: v }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="low">Low</SelectItem><SelectItem value="normal">Normal</SelectItem><SelectItem value="high">High</SelectItem></SelectContent></Select></div><div className="space-y-1"><Label>Target Role</Label><Select value={form.target_role} onValueChange={v => setForm(f => ({ ...f, target_role: v }))}><SelectTrigger><SelectValue placeholder="All roles" /></SelectTrigger><SelectContent><SelectItem value="admin">Admin</SelectItem><SelectItem value="teacher">Teacher</SelectItem><SelectItem value="student">Student</SelectItem><SelectItem value="parent">Parent</SelectItem></SelectContent></Select></div></div><Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Post Announcement'}</Button></form>);
   };
 

@@ -7,6 +7,7 @@ import ExportButton from '@/components/common/ExportButton';
 import { Library } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,7 @@ import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/export';
 
 const LibraryPage = () => {
+  const { currentSchool } = useSchool();
   const [books, setBooks] = useState<any[]>([]);
   const [issues, setIssues] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
@@ -44,7 +46,7 @@ const LibraryPage = () => {
   const AddBookForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ title: '', author: '', isbn: '', category: '', total_copies: '1', shelf_location: '' });
     const [saving, setSaving] = useState(false);
-    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const copies = Number(form.total_copies); const { error } = await supabase.from('library_books').insert({ title: form.title, author: form.author || null, isbn: form.isbn || null, category: form.category || null, total_copies: copies, available_copies: copies, shelf_location: form.shelf_location || null }); if (error) toast.error(error.message); else { toast.success('Book added'); onClose(); fetchData(); } setSaving(false); };
+    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const copies = Number(form.total_copies); const { error } = await supabase.from('library_books').insert({ title: form.title, author: form.author || null, isbn: form.isbn || null, category: form.category || null, total_copies: copies, available_copies: copies, shelf_location: form.shelf_location || null, school_id: currentSchool?.id || null }); if (error) toast.error(error.message); else { toast.success('Book added'); onClose(); fetchData(); } setSaving(false); };
     return (<form onSubmit={handleSubmit} className="space-y-3"><div className="space-y-1"><Label>Title *</Label><Input required value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} /></div><div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label>Author</Label><Input value={form.author} onChange={e => setForm(f => ({ ...f, author: e.target.value }))} /></div><div className="space-y-1"><Label>ISBN</Label><Input value={form.isbn} onChange={e => setForm(f => ({ ...f, isbn: e.target.value }))} /></div><div className="space-y-1"><Label>Category</Label><Input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} /></div><div className="space-y-1"><Label>Copies</Label><Input type="number" min={1} value={form.total_copies} onChange={e => setForm(f => ({ ...f, total_copies: e.target.value }))} /></div><div className="space-y-1"><Label>Shelf Location</Label><Input value={form.shelf_location} onChange={e => setForm(f => ({ ...f, shelf_location: e.target.value }))} /></div></div><Button type="submit" className="w-full" disabled={saving}>{saving ? 'Saving...' : 'Add Book'}</Button></form>);
   };
 
@@ -58,7 +60,7 @@ const LibraryPage = () => {
   const AddIssueForm = ({ onClose }: { onClose: () => void }) => {
     const [form, setForm] = useState({ book_id: '', student_id: '', due_date: '' });
     const [saving, setSaving] = useState(false);
-    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('book_issues').insert({ book_id: form.book_id, student_id: form.student_id, due_date: form.due_date || null }); if (error) toast.error(error.message); else { toast.success('Book issued'); onClose(); fetchData(); } setSaving(false); };
+    const handleSubmit = async (e: React.FormEvent) => { e.preventDefault(); setSaving(true); const { error } = await supabase.from('book_issues').insert({ book_id: form.book_id, student_id: form.student_id, due_date: form.due_date || null, school_id: currentSchool?.id || null }); if (error) toast.error(error.message); else { toast.success('Book issued'); onClose(); fetchData(); } setSaving(false); };
     return (<form onSubmit={handleSubmit} className="space-y-3"><div className="space-y-1"><Label>Book *</Label><Select value={form.book_id} onValueChange={v => setForm(f => ({ ...f, book_id: v }))}><SelectTrigger><SelectValue placeholder="Select book" /></SelectTrigger><SelectContent>{books.map(b => <SelectItem key={b.id} value={b.id}>{b.title}</SelectItem>)}</SelectContent></Select></div><div className="space-y-1"><Label>Student *</Label><Select value={form.student_id} onValueChange={v => setForm(f => ({ ...f, student_id: v }))}><SelectTrigger><SelectValue placeholder="Select student" /></SelectTrigger><SelectContent>{students.map(s => <SelectItem key={s.id} value={s.id}>{s.full_name}</SelectItem>)}</SelectContent></Select></div><div className="space-y-1"><Label>Due Date</Label><Input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} /></div><Button type="submit" className="w-full" disabled={saving || !form.book_id || !form.student_id}>{saving ? 'Saving...' : 'Issue Book'}</Button></form>);
   };
 

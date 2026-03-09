@@ -7,6 +7,7 @@ import ExportButton from '@/components/common/ExportButton';
 import { UserCog, UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchool } from '@/contexts/SchoolContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,6 +20,7 @@ import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/export';
 
 const StaffPage = () => {
+  const { currentSchool } = useSchool();
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,7 +46,7 @@ const StaffPage = () => {
     const [saving, setSaving] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('staff').insert({ ...form, salary: form.salary ? Number(form.salary) : null });
+      const { error } = await supabase.from('staff').insert({ ...form, salary: form.salary ? Number(form.salary) : null, school_id: currentSchool?.id || null });
       if (error) toast.error(error.message); else { toast.success('Staff added'); onClose(); fetchData(); }
       setSaving(false);
     };
