@@ -45,7 +45,7 @@ const TimetablePage = () => {
     const [saving, setSaving] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('timetable').insert({ day_of_week: form.day_of_week, period: Number(form.period), class_id: form.class_id || null, subject_id: form.subject_id || null, start_time: form.start_time || null, end_time: form.end_time || null, room: form.room || null });
+      const { error } = await supabase.from('timetable').insert({ day_of_week: form.day_of_week, period: Number(form.period), class_id: form.class_id || null, subject_id: form.subject_id || null, start_time: form.start_time || null, end_time: form.end_time || null, room: form.room || null, school_id: currentSchool?.id || null });
       if (error) toast.error(error.message); else { toast.success('Entry added'); onClose(); fetchEntries(); }
       setSaving(false);
     };
