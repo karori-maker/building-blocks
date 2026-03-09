@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/export';
 
 const FeesPage = () => {
+  const { currentSchool } = useSchool();
   const [structure, setStructure] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
