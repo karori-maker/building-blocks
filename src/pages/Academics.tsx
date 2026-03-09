@@ -23,6 +23,7 @@ import { exportToCSV } from '@/lib/export';
 
 const AcademicsPage = () => {
   const { user, role } = useAuth();
+  const { currentSchool } = useSchool();
   const [exams, setExams] = useState<any[]>([]);
   const [grades, setGrades] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
