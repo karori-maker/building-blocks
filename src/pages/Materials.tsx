@@ -78,6 +78,7 @@ const MaterialsPage = () => {
         description: form.description || null,
         class_id: form.class_id || null,
         subject_id: form.subject_id || null,
+        school_id: currentSchool?.id || null,
       });
       if (error) toast.error(error.message); else { toast.success('Material added'); onClose(); fetchData(); }
       setSaving(false);
