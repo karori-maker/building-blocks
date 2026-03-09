@@ -20,6 +20,7 @@ import { exportToCSV } from '@/lib/export';
 import { useAuth } from '@/contexts/AuthContext';
 
 const EventsPage = () => {
+  const { currentSchool } = useSchool();
   const { user } = useAuth();
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
