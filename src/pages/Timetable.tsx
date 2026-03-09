@@ -18,6 +18,7 @@ import { exportToCSV } from '@/lib/export';
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const TimetablePage = () => {
+  const { currentSchool } = useSchool();
   const [entries, setEntries] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
