@@ -139,7 +139,7 @@ const AcademicsPage = () => {
     const [saving, setSaving] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('exams').insert({ name: form.name, exam_type: form.exam_type, subject_id: form.subject_id || null, class_id: form.class_id || null, date: form.date || null, max_marks: Number(form.max_marks) });
+      const { error } = await supabase.from('exams').insert({ name: form.name, exam_type: form.exam_type, subject_id: form.subject_id || null, class_id: form.class_id || null, date: form.date || null, max_marks: Number(form.max_marks), school_id: currentSchool?.id || null });
       if (error) toast.error(error.message); else { toast.success('Exam added'); onClose(); fetchData(); }
       setSaving(false);
     };
