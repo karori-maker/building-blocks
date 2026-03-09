@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/export';
 
 const AssignmentsPage = () => {
+  const { currentSchool } = useSchool();
   const [assignments, setAssignments] = useState<any[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
