@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 
 const MaterialsPage = () => {
   const { user } = useAuth();
+  const { currentSchool } = useSchool();
   const [materials, setMaterials] = useState<any[]>([]);
   const [checks, setChecks] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
