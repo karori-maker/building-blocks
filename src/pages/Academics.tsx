@@ -216,7 +216,7 @@ const AcademicsPage = () => {
     const [saving, setSaving] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('subjects').insert({ name: form.name, code: form.code || null, class_id: form.class_id || null });
+      const { error } = await supabase.from('subjects').insert({ name: form.name, code: form.code || null, class_id: form.class_id || null, school_id: currentSchool?.id || null });
       if (error) toast.error(error.message); else { toast.success('Subject added'); onClose(); fetchData(); }
       setSaving(false);
     };
