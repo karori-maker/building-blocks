@@ -55,7 +55,7 @@ const AttendancePage = () => {
     const [saving, setSaving] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('attendance').insert({ student_id: form.student_id, class_id: form.class_id || null, date: form.date, status: form.status, remarks: form.remarks || null });
+      const { error } = await supabase.from('attendance').insert({ student_id: form.student_id, class_id: form.class_id || null, date: form.date, status: form.status, remarks: form.remarks || null, school_id: currentSchool?.id || null });
       if (error) toast.error(error.message); else { toast.success('Attendance recorded'); onClose(); fetchRecords(); }
       setSaving(false);
     };

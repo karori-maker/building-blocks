@@ -55,7 +55,7 @@ const AssignmentsPage = () => {
     const [saving, setSaving] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('assignments').insert({ title: form.title, description: form.description || null, class_id: form.class_id || null, subject_id: form.subject_id || null, due_date: form.due_date || null, max_marks: Number(form.max_marks) });
+      const { error } = await supabase.from('assignments').insert({ title: form.title, description: form.description || null, class_id: form.class_id || null, subject_id: form.subject_id || null, due_date: form.due_date || null, max_marks: Number(form.max_marks), school_id: currentSchool?.id || null });
       if (error) toast.error(error.message); else { toast.success('Assignment added'); onClose(); fetchData(); }
       setSaving(false);
     };
