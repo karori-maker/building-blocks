@@ -46,7 +46,7 @@ const StaffPage = () => {
     const [saving, setSaving] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('staff').insert({ ...form, salary: form.salary ? Number(form.salary) : null });
+      const { error } = await supabase.from('staff').insert({ ...form, salary: form.salary ? Number(form.salary) : null, school_id: currentSchool?.id || null });
       if (error) toast.error(error.message); else { toast.success('Staff added'); onClose(); fetchData(); }
       setSaving(false);
     };
