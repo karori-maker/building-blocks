@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/export';
 
 const StaffPage = () => {
+  const { currentSchool } = useSchool();
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
