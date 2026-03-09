@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/export';
 
 const InventoryPage = () => {
+  const { currentSchool } = useSchool();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const fetchData = () => { setLoading(true); supabase.from('inventory').select('*').order('item_name').then(({ data }) => { setItems(data || []); setLoading(false); }); };
