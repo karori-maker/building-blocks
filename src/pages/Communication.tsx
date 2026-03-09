@@ -22,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const CommunicationPage = () => {
   const { user } = useAuth();
+  const { currentSchool } = useSchool();
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
