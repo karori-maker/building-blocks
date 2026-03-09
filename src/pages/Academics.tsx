@@ -192,7 +192,7 @@ const AcademicsPage = () => {
     const [saving, setSaving] = useState(false);
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault(); setSaving(true);
-      const { error } = await supabase.from('grades').insert({ student_id: form.student_id, subject_id: form.subject_id || null, exam_id: form.exam_id || null, marks_obtained: form.marks_obtained ? Number(form.marks_obtained) : null, grade: form.grade || null, remarks: form.remarks || null });
+      const { error } = await supabase.from('grades').insert({ student_id: form.student_id, subject_id: form.subject_id || null, exam_id: form.exam_id || null, marks_obtained: form.marks_obtained ? Number(form.marks_obtained) : null, grade: form.grade || null, remarks: form.remarks || null, school_id: currentSchool?.id || null });
       if (error) toast.error(error.message); else { toast.success('Grade added'); onClose(); fetchData(); }
       setSaving(false);
     };
