@@ -22,6 +22,7 @@ import { exportToCSV } from '@/lib/export';
 const severityColor: Record<string, string> = { minor: 'bg-yellow-100 text-yellow-800', moderate: 'bg-orange-100 text-orange-800', major: 'bg-red-100 text-red-800' };
 
 const DisciplinePage = () => {
+  const { currentSchool } = useSchool();
   const [incidents, setIncidents] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
