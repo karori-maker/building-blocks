@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { exportToCSV } from '@/lib/export';
 
 const FinancePage = () => {
+  const { currentSchool } = useSchool();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
